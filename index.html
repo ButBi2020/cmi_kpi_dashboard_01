@@ -1347,42 +1347,32 @@ function getPass(username){
   }catch(e){ return USERS[username] ? USERS[username].pass : ''; }
 }
 
-// ── JSONP helper — bypasses CORS entirely ─────────────────────────────────────
-function jsonpCall(url, callbackName, timeoutMs, onSuccess, onError){
-  var script=document.createElement('script');
-  var tid=setTimeout(function(){
-    cleanup(); if(onError)onError('timeout');
-  }, timeoutMs||8000);
-  function cleanup(){
-    clearTimeout(tid);
-    try{document.head.removeChild(script);}catch(e){}
-    delete window[callbackName];
-  }
-  window[callbackName]=function(data){
-    cleanup(); if(onSuccess)onSuccess(data);
-  };
-  script.src=url+'&callback='+callbackName+'&t='+Date.now();
-  script.onerror=function(){cleanup();if(onError)onError('script error');};
-  document.head.appendChild(script);
+// ── GAS fetch helper — handles HtmlService text response ─────────────────────
+function gasFetch(url, cb) {
+  fetch(url, {mode:'cors'})
+    .then(function(r){ return r.text(); })
+    .then(function(txt){
+      // HtmlService wraps JSON in HTML — extract the JSON part
+      var match = txt.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+      var data  = match ? JSON.parse(match[0]) : null;
+      cb(null, data);
+    })
+    .catch(function(err){ cb(err, null); });
 }
 
 // Pull all passwords from GAS → store in localStorage
-// Called once on page load so login always has fresh passwords
 function syncPasswordsFromGAS(cb){
   if(!GAS_PW_URL){if(cb)cb();return;}
-  jsonpCall(
-    GAS_PW_URL+'?action=getPasswords',
-    '_gasCb_get_'+Date.now(),
-    8000,
-    function(d){
-      if(d&&typeof d==='object'){
+  gasFetch(
+    GAS_PW_URL+'?action=getPasswords&t='+Date.now(),
+    function(err, d){
+      if(!err && d && typeof d==='object'){
         Object.keys(d).forEach(function(u){
           try{localStorage.setItem('cmi_pw_'+u, d[u]);}catch(e){}
         });
       }
       if(cb)cb();
-    },
-    function(){ if(cb)cb(); } // fallback to localStorage on error
+    }
   );
 }
 
@@ -1460,28 +1450,21 @@ function showChangePw(){
     try{ localStorage.setItem('cmi_pw_'+U.username, nw); }catch(e){}
     msg.textContent='✓ Saving…';
     msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--am)';
-    // Push to GAS via JSONP — bypasses CORS entirely
     if(GAS_PW_URL){
-      jsonpCall(
+      gasFetch(
         GAS_PW_URL+'?action=setPassword'
           +'&username='+encodeURIComponent(U.username)
-          +'&password='+encodeURIComponent(nw),
-        '_gasCb_set_'+Date.now(),
-        8000,
-        function(d){
-          if(d&&d.ok){
+          +'&password='+encodeURIComponent(nw)
+          +'&t='+Date.now(),
+        function(err, d){
+          if(!err && d && d.ok){
             msg.textContent='✓ Password changed & synced across all devices.';
             msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--gn)';
           } else {
-            msg.textContent='✓ Saved locally. Sync failed: '+(d&&d.error?d.error:'unknown');
+            msg.textContent='✓ Saved locally. Sync failed: '+(d&&d.error?d.error:'check GAS');
             msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--am)';
           }
           setTimeout(function(){wrap.innerHTML='';},2500);
-        },
-        function(){
-          msg.textContent='✓ Saved locally. Sync to other devices failed.';
-          msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--am)';
-          setTimeout(function(){wrap.innerHTML='';},3000);
         }
       );
     } else {
