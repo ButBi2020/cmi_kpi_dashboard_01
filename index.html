@@ -1,0 +1,1549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMI · KPI Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f4f3ef;--sf:#fff;--sf2:#eeede8;
+  --bd:#dddcd5;--bd2:#c8c7bf;
+  --tx:#1a1a17;--mu:#68675f;--hi:#a0a099;
+  --bl:#1255a0;--bl-bg:#e7f0fb;--bl-lt:#c4d8f4;
+  --gn:#0b6b4e;--gn-bg:#dff3ec;
+  --am:#7a4a08;--am-bg:#faebd5;
+  --rd:#9c2828;--rd-bg:#fbe9e9;
+  --lw:280px;--th:46px;--r:7px;--rl:11px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  font-size:13px;background:var(--bg);color:var(--tx);min-height:100vh;overflow:hidden}
+input,button,select,textarea{font-family:inherit;font-size:13px}
+button{cursor:pointer}
+.hidden{display:none!important}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px}
+
+/* ── LOGIN ── */
+#pg-login{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.lcard{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:36px;width:340px}
+.lbrand{font-size:22px;font-weight:700;margin-bottom:3px}
+.lsub{color:var(--mu);font-size:12px;margin-bottom:26px}
+.lf{display:flex;flex-direction:column;gap:5px;margin-bottom:13px}
+.lf label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--mu)}
+.lf input{padding:9px 11px;border:1px solid var(--bd);border-radius:var(--r);
+  background:var(--sf);color:var(--tx);font-size:14px}
+.lf input:focus{outline:none;border-color:var(--bl);box-shadow:0 0 0 3px rgba(18,85,160,.1)}
+#btn-login{width:100%;padding:10px;background:var(--bl);color:#fff;border:none;
+  border-radius:var(--r);font-size:14px;font-weight:600;margin-top:4px}
+#btn-login:hover{opacity:.88}
+#l-err{color:var(--rd);font-size:12px;margin-top:8px;padding:7px 10px;
+  background:var(--rd-bg);border-radius:var(--r);display:none}
+.lhint{margin-top:18px;padding-top:14px;border-top:1px solid var(--bd);
+  font-size:11px;color:var(--hi);line-height:1.6}
+.lhint b{color:var(--mu)}
+
+/* ── TOPBAR ── */
+.topbar{height:var(--th);background:var(--sf);border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:space-between;padding:0 18px;
+  position:fixed;top:0;left:0;right:0;z-index:100}
+.tlogo{font-weight:700;font-size:14px}
+.tlogo span{color:var(--mu);font-weight:400}
+.tright{display:flex;align-items:center;gap:10px}
+/* FIX #2: sync badge is now muted/subtle */
+#sync-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:400;
+  color:var(--hi);background:transparent;cursor:pointer;border:none;
+  transition:color .2s}
+#sync-badge:hover{color:var(--mu)}
+/* FIX #3a: t-badge = dept abbreviation badge (e.g. "HR")
+   To remove: comment out the line   el('t-badge').textContent = U.dept;  in startApp() */
+.tbadge{font-size:11px;font-weight:600;padding:2px 9px;border-radius:12px}
+.tba{background:var(--bl-bg);color:var(--bl)}
+.tbm{background:var(--am-bg);color:var(--am)}
+/* FIX #3b: t-name = user's full name text (e.g. "Ms Chau")
+   To remove: comment out the line   el('t-name').textContent = U.name;  in startApp() */
+.tav{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:11px;font-weight:700}
+#btn-logout{padding:5px 11px;border-radius:var(--r);border:1px solid var(--bd2);
+  background:transparent;color:var(--mu);font-size:11px}
+#btn-logout:hover{background:var(--sf2);color:var(--tx)}
+
+/* ── SHELL ── */
+#pg-app{display:none;flex-direction:column}
+.shell{display:flex;height:calc(100vh - var(--th));margin-top:var(--th)}
+.lp{width:var(--lw);flex-shrink:0;background:var(--sf);border-right:1px solid var(--bd);
+  overflow:hidden;display:flex;flex-direction:column}
+.lp-sc{flex:1;overflow-y:auto;padding:14px 13px}
+.rp{flex:1;overflow-y:auto;padding:18px 20px;background:var(--bg)}
+.lsec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+  color:var(--hi);margin:14px 0 7px}
+.lsec:first-child{margin-top:0}
+
+/* ── DATE RANGE ── */
+.dr-box{background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r);
+  padding:10px 11px;margin-bottom:4px}
+.dr-quick{display:flex;gap:4px;margin-bottom:8px}
+.drq{padding:3px 9px;border-radius:12px;border:1px solid var(--bd);
+  background:transparent;color:var(--mu);font-size:10px;font-weight:600;cursor:pointer}
+.drq:hover,.drq.act{background:var(--bl);color:#fff;border-color:var(--bl)}
+.dr-row{display:flex;gap:5px;align-items:center;margin-bottom:6px}
+.dr-row label{font-size:10px;color:var(--mu);width:26px;font-weight:600;flex-shrink:0}
+.drsel,.mysel{flex:1;padding:5px 7px;border:1px solid var(--bd);border-radius:var(--r);
+  background:var(--sf);color:var(--tx);font-size:11px}
+.dr-apply{width:100%;padding:6px;border:none;border-radius:var(--r);
+  background:var(--bl);color:#fff;font-size:11px;font-weight:600;cursor:pointer;margin-top:3px}
+
+/* ── ACCORDION ── */
+.acc{border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:6px}
+.acc-h{display:flex;align-items:center;gap:7px;padding:9px 10px;cursor:pointer;
+  user-select:none;transition:background .12s}
+.acc-h:hover,.acc-h.open{background:var(--bl-bg)}
+.ah-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ah-info{flex:1;min-width:0}
+.ah-name{font-weight:600;font-size:12px;line-height:1.2}
+/* FIX #5: last data month shown under dept name */
+.ah-last{font-size:10px;color:var(--hi);margin-top:1px}
+.ah-last.ok{color:var(--gn)}
+.ah-last.warn{color:var(--am)}
+.ah-last.miss{color:var(--rd)}
+.ah-st{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.st-ok{background:#1D9E75}.st-pend{background:#EF9F27}
+.ah-ch{font-size:9px;color:var(--hi);transition:transform .2s;flex-shrink:0}
+.ah-ch.open{transform:rotate(90deg)}
+.acc-b{display:none;border-top:1px solid var(--bd);background:var(--sf2);padding:10px 11px}
+.acc-b.open{display:block}
+.ks-row{display:flex;align-items:baseline;padding:4px 0;border-bottom:1px solid var(--bd)}
+.ks-row:last-of-type{border-bottom:none}
+.ks-l{font-size:11px;color:var(--mu);flex:1}
+.ks-v{font-size:12px;font-weight:600}
+.ks-d{font-size:10px;margin-left:4px}
+.du{color:var(--gn)}.dd{color:var(--rd)}.dn{color:var(--hi)}
+.ks-cmt{margin-top:7px;padding:6px 8px;background:var(--sf);border-radius:var(--r);
+  font-size:11px;color:var(--mu);font-style:italic;line-height:1.4;border:1px solid var(--bd)}
+.vc-btn{width:100%;margin-top:8px;padding:6px;border-radius:var(--r);
+  border:1px solid var(--bl-lt);background:var(--bl-bg);color:var(--bl);
+  font-size:11px;font-weight:600;cursor:pointer}
+.vc-btn:hover{background:var(--bl-lt)}
+
+/* ── INPUT FORM ── */
+.my-row{display:flex;gap:6px;margin-bottom:11px}
+.mysel{padding:7px 8px;font-size:12px;font-weight:500}
+.inp-st{display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;padding:6px 9px;border-radius:var(--r);
+  background:var(--sf2);border:1px solid var(--bd)}
+.badge{display:inline-flex;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+.bg{background:var(--gn-bg);color:var(--gn)}
+.ba{background:var(--am-bg);color:var(--am)}
+.ki-list{display:flex;flex-direction:column;gap:9px;margin-bottom:12px}
+.ki{display:flex;flex-direction:column;gap:3px}
+.ki label{font-size:11px;color:var(--mu);font-weight:600}
+/* delta row inside each KPI input */
+.ki-lbl-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px}
+.ki-lbl-row label{margin-bottom:0}
+.ki-delta{font-size:10px;font-weight:700;padding:1px 6px;border-radius:8px;white-space:nowrap}
+.ki-delta.du{background:var(--gn-bg);color:var(--gn)}
+.ki-delta.dd{background:var(--rd-bg);color:var(--rd)}
+.ki-delta.dn{color:var(--hi)}
+.ki-vs{font-weight:400;font-size:10px}
+/* Change password button */
+.chpw-btn{width:100%;padding:7px;border-radius:var(--r);border:1px solid var(--bd2);
+  background:transparent;color:var(--mu);font-size:12px;cursor:pointer;margin-top:2px;text-align:left}
+.chpw-btn:hover{background:var(--sf2);color:var(--tx)}
+/* Change password in-flow modal */
+.pw-modal{background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r);
+  padding:14px;margin-top:10px;display:flex;flex-direction:column;gap:8px}
+.pw-modal label{font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.6px;color:var(--mu)}
+.pw-modal input{padding:7px 9px;border:1px solid var(--bd);border-radius:var(--r);
+  background:var(--sf);color:var(--tx);font-size:13px;width:100%}
+.pw-modal input:focus{outline:none;border-color:var(--bl)}
+.pw-save{width:100%;padding:7px;border:none;border-radius:var(--r);
+  background:var(--bl);color:#fff;font-size:12px;font-weight:600;cursor:pointer}
+.pw-save:hover{opacity:.88}
+.pw-msg{font-size:11px;text-align:center;margin-top:2px;display:none}
+.ki-in{padding:7px 9px;border:1px solid var(--bd);border-radius:var(--r);
+  background:var(--sf);color:var(--tx);width:100%}
+.ki-in:focus{outline:none;border-color:var(--bl)}
+.ki-ta{padding:7px 9px;border:1px solid var(--bd);border-radius:var(--r);
+  background:var(--sf);color:var(--tx);resize:none;min-height:50px;
+  width:100%;font-family:inherit;font-size:12px;line-height:1.4}
+.ki-ta:focus{outline:none;border-color:var(--bl)}
+.sv-btn{width:100%;padding:9px;border:none;border-radius:var(--r);
+  background:var(--bl);color:#fff;font-size:13px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;gap:6px}
+.sv-btn:hover{opacity:.88}
+.sv-ok{font-size:11px;text-align:center;color:var(--gn);margin-top:5px;display:none;font-weight:600}
+.sv-er{font-size:11px;text-align:center;color:var(--rd);margin-top:5px;display:none}
+.spin{width:13px;height:13px;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;display:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── RIGHT PANEL ── */
+/* FIX #6: back button */
+.rp-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.rp-hdr-left{}
+.rp-title{font-size:17px;font-weight:700;margin-bottom:3px}
+.rp-sub{font-size:12px;color:var(--mu)}
+#btn-bod-back{padding:6px 14px;border-radius:var(--r);border:1px solid var(--bd2);
+  background:var(--sf);color:var(--mu);font-size:12px;white-space:nowrap;margin-top:2px}
+#btn-bod-back:hover{background:var(--sf2);color:var(--tx)}
+.charts-col{display:flex;flex-direction:column;gap:14px}
+.cc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:16px 18px}
+.cc-t{font-size:13px;font-weight:700;margin-bottom:2px}
+.cc-s{font-size:11px;color:var(--mu);margin-bottom:12px}
+.cc-w{position:relative;height:185px}
+.cc-w.tall{height:220px}
+.legend{display:flex;gap:16px;margin-bottom:8px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--mu)}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* ── STATUS TABLE ── */
+.stbl-w{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);
+  overflow:hidden;margin-bottom:14px}
+.stbl-h{padding:12px 16px;font-size:13px;font-weight:700;border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:space-between}
+table{width:100%;border-collapse:collapse}
+thead th{padding:8px 14px;text-align:left;font-size:10px;font-weight:700;color:var(--mu);
+  text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--bd)}
+tbody td{padding:9px 14px;font-size:12px;border-bottom:1px solid var(--bd)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--sf2)}
+
+/* LOCK/REVISION */
+.rev-badge{display:inline-flex;align-items:center;padding:1px 6px;border-radius:8px;font-size:10px;font-weight:600;background:var(--bl-bg);color:var(--bl);margin-left:4px}
+.lock-bar{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--gn-bg);border:1px solid var(--gn);border-radius:var(--r);margin-bottom:10px;font-size:12px;color:var(--gn);font-weight:600}
+.edit-btn{padding:4px 10px;border-radius:var(--r);border:1px solid var(--gn);background:var(--sf);color:var(--gn);font-size:11px;font-weight:600;cursor:pointer}
+.edit-btn:hover{background:var(--gn);color:#fff}
+/* MESSAGING */
+.msg-panel{position:fixed;right:0;top:var(--th);bottom:0;width:320px;background:var(--sf);border-left:1px solid var(--bd);display:flex;flex-direction:column;z-index:90;transform:translateX(100%);transition:transform .25s ease}
+.msg-panel.open{transform:translateX(0)}
+.msg-hdr{padding:12px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
+.msg-hdr-title{font-weight:600;font-size:13px}
+.msg-close-btn{border:none;background:none;font-size:16px;color:var(--mu);cursor:pointer;padding:2px 6px}
+.msg-close-btn:hover{color:var(--tx)}
+.msg-thread{flex:1;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.msg-bubble{max-width:85%;padding:8px 11px;border-radius:10px;font-size:12px;line-height:1.5;word-break:break-word}
+.msg-from-me{align-self:flex-end;background:var(--bl);color:#fff;border-radius:10px 10px 2px 10px}
+.msg-from-other{align-self:flex-start;background:var(--sf2);color:var(--tx);border-radius:10px 10px 10px 2px;border:1px solid var(--bd)}
+.msg-meta{font-size:10px;opacity:.65;margin-top:3px}
+.msg-compose{padding:10px 14px;border-top:1px solid var(--bd);display:flex;gap:7px}
+.msg-txt-input{flex:1;padding:7px 10px;border:1px solid var(--bd);border-radius:var(--r);font-size:12px;resize:none;font-family:inherit;background:var(--sf)}
+.msg-txt-input:focus{outline:none;border-color:var(--bl)}
+.msg-send-btn2{padding:7px 12px;border:none;border-radius:var(--r);background:var(--bl);color:#fff;font-size:12px;font-weight:600;cursor:pointer;align-self:flex-end}
+.msg-send-btn2:hover{opacity:.88}
+.msg-action-btn{padding:5px 11px;border-radius:var(--r);border:1px solid var(--bd2);background:var(--sf);color:var(--mu);font-size:11px;cursor:pointer;margin-left:5px}
+.msg-action-btn:hover{background:var(--sf2);color:var(--tx)}
+.unread-dot{width:7px;height:7px;border-radius:50%;background:var(--rd);display:inline-block;margin-left:4px;vertical-align:middle}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:center;justify-content:center}
+.modal-box{background:var(--sf);border-radius:var(--rl);width:560px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden}
+.modal-head{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;font-weight:600;font-size:14px}
+.modal-body{flex:1;overflow-y:auto;padding:14px 18px}
+.modal-close-x{border:none;background:none;font-size:18px;color:var(--mu);cursor:pointer}
+.modal-close-x:hover{color:var(--tx)}
+.hist-item{padding:9px 0;border-bottom:1px solid var(--bd)}
+.hist-item:last-child{border-bottom:none}
+.hist-meta{font-size:10px;color:var(--hi);margin-bottom:2px}
+.hist-text{font-size:12px;line-height:1.5}
+
+/* SPLIT CHART CARD — monthly left + total right */
+.cc-split{display:grid;grid-template-columns:1fr 200px;gap:12px;align-items:start}
+.cc-monthly{flex:1}
+.cc-total{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);
+  padding:14px 16px}
+.cc-total-title{font-size:12px;font-weight:700;color:var(--tx);margin-bottom:2px}
+.cc-total-sub{font-size:10px;color:var(--mu);margin-bottom:10px}
+.cc-total-w{position:relative;height:160px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="pg-login">
+  <div class="lcard">
+    <div class="lbrand">CMI Operations</div>
+    <div class="lsub">KPI Reporting System</div>
+    <div class="lf"><label>Username</label>
+      <input id="l-u" type="text" autocomplete="off" placeholder="e.g. production"></div>
+    <div class="lf"><label>Password</label>
+      <input id="l-p" type="password" placeholder="••••••••"></div>
+    <div id="l-err"></div>
+    <button id="btn-login">Sign in</button>
+    <div class="lhint">
+      <b>Accounts:</b> bod · production · sales · qa · finance · supply · hr · cs · design · it · marketing · project_dev · property · tl_handover · cid<br>
+      Password: <b>[username]123</b> &nbsp;·&nbsp; e.g. bod123, hr123
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="pg-app">
+  <div class="topbar">
+    <div class="tlogo">CMI <span>· KPI Dashboard</span></div>
+    <div class="tright">
+      <!-- FIX #2: sync badge is muted, no background colour -->
+      <button id="sync-badge">● Loading…</button>
+      <!-- FIX #3a: dept badge — to hide, comment:  el('t-badge').textContent = U.dept  -->
+      <span id="t-badge" class="tbadge"></span>
+      <!-- FIX #3b: name text — to hide, comment:  el('t-name').textContent = U.name  -->
+      <span id="t-name" style="font-size:12px;color:var(--mu)"></span>
+      <div id="t-av" class="tav"></div>
+      <button id="btn-logout">Sign out</button>
+    </div>
+  </div>
+  <div class="shell">
+    <div class="lp"><div class="lp-sc" id="lp-body"></div></div>
+    <div class="rp" id="rp-panel">
+      <!-- FIX #6: header row with optional back button -->
+      <div class="rp-hdr">
+        <div class="rp-hdr-left">
+          <div id="rp-title" class="rp-title">CMI Dashboard</div>
+          <div id="rp-sub" class="rp-sub">Select a department from the left panel</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px"><div id="rp-msg-btn-wrap"></div><button class="msg-action-btn" id="rp-hist-btn">&#x1F4CB; History</button><button id="btn-bod-back" class="hidden">← Overview</button></div>
+      </div>
+      <div id="rp-body"></div>
+    </div>
+  
+  <div class="msg-panel" id="msg-panel">
+    <div class="msg-hdr">
+      <div class="msg-hdr-title" id="msg-panel-title">Messages</div>
+      <button class="msg-close-btn" id="msg-panel-close-btn">&#x2715;</button>
+    </div>
+    <div class="msg-thread" id="msg-thread"></div>
+    <div class="msg-compose">
+      <textarea class="msg-txt-input" id="msg-txt-input" rows="2" placeholder="Type a message…"></textarea>
+      <button class="msg-send-btn2" id="msg-send-btn">Send</button>
+    </div>
+  </div>
+  <div id="modal-overlay" style="display:none" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-head">
+        <span id="modal-title">Message History</span>
+        <button class="modal-close-x" id="modal-close-x">&#x2715;</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// GOOGLE SHEETS CONFIG
+// ═══════════════════════════════════════════════
+var SHEET_ID  = '1erlvjOnrRT90VMnCkNnqOU-xORkYidNqwAyxcWBjsVk';
+var SHEET_GID = '0';
+var SHEET_URL = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID
+              + '/export?format=csv&gid=' + SHEET_GID;
+var SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbxqMKhOsE9-IdWNCqsIRCnNHQNr4QsFmbKVSCc_QovtWe5YL-ziFO6mGOjkhbr1avGq/exec'; // optional GAS URL for KPI save
+var GAS_PW_URL  = 'https://script.google.com/macros/s/AKfycbxqMKhOsE9-IdWNCqsIRCnNHQNr4QsFmbKVSCc_QovtWe5YL-ziFO6mGOjkhbr1avGq/exec'; // ★ FILL IN: Google Apps Script URL for password sync
+                      // Get this URL after deploying gas_password_sync.gs
+var GAS_MSG_URL  = 'https://script.google.com/macros/s/AKfycbxqMKhOsE9-IdWNCqsIRCnNHQNr4QsFmbKVSCc_QovtWe5YL-ziFO6mGOjkhbr1avGq/exec';
+
+// ═══════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════
+var MN  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var NY  = new Date().getFullYear();
+var NM  = new Date().getMonth(); // 0-indexed: Jan=0 … Dec=11
+var YRS = [2024, 2025, 2026, 2027];
+
+// ═══════════════════════════════════════════════
+// DEPT DEFINITIONS
+// ═══════════════════════════════════════════════
+var DEPTS = [
+  {id:'PROD',  name:'Production',          color:'#378ADD', ini:'PR', mgr:'Prod Manager',
+   purpose:'Deliver boats to plan, on time, with controlled labour.',
+   kpis:[
+     {k:'Plan_Boats',   l:'Plan Boats',    u:'count',t:'i'},
+     {k:'Actual_Boats', l:'Actual Boats',  u:'count',t:'i'},
+     {k:'OnTime_pct',   l:'On-Time %',     u:'%',    t:'p'},
+     {k:'Hours_Planned',l:'Hours Planned', u:'hrs',  t:'i'},
+     {k:'Hours_Actual', l:'Hours Actual',  u:'hrs',  t:'i'},
+   ],
+   overlayCharts:[
+     {title:'Boats: Plan vs Actual', unit:'count', datasets:[
+       {key:'Plan_Boats',   label:'Plan',    color:'#93C5FD', type:'bar'},
+       {key:'Actual_Boats', label:'Actual',  color:'#1D4ED8', type:'bar'},
+     ]},
+     {title:'Hours: Planned vs Actual', unit:'hrs', datasets:[
+       {key:'Hours_Planned', label:'Planned', color:'#86EFAC', type:'bar'},
+       {key:'Hours_Actual',  label:'Actual',  color:'#16A34A', type:'bar'},
+     ]},
+     {title:'On-Time %', unit:'%', datasets:[
+       {key:'OnTime_pct', label:'On-Time %', color:'#F59E0B', type:'line'},
+     ]},
+   ]},
+  {id:'SALES', name:'Sales',               color:'#1D9E75', ini:'SA', mgr:'Sales Manager',
+   purpose:'Order intake quality and predictability.',
+   kpis:[
+     {k:'Orders_Booked_USD',l:'Orders Booked',u:'USD',t:'c'},
+     {k:'Target_USD',       l:'Target',        u:'USD',t:'c'},
+     {k:'Dealer_Perf_Score',l:'Dealer Score',  u:'pts',t:'p'},
+     {k:'Conversion_pct',   l:'Conversion %',  u:'%',  t:'p'},
+     {k:'Pipeline_3mo_USD', l:'Pipeline 3mo',  u:'USD',t:'c'},
+   ],
+   overlayCharts:[
+     {title:'Orders Booked vs Target', unit:'USD', datasets:[
+       {key:'Target_USD',        label:'Target',        color:'#86EFAC', type:'bar'},
+       {key:'Orders_Booked_USD', label:'Orders Booked', color:'#1D9E75', type:'bar'},
+     ]},
+     {title:'Conversion % & Dealer Score', unit:'', datasets:[
+       {key:'Conversion_pct',    label:'Conversion %',  color:'#34D399', type:'line'},
+       {key:'Dealer_Perf_Score', label:'Dealer Score',  color:'#059669', type:'line'},
+     ]},
+     {title:'Pipeline 3-Month', unit:'USD', datasets:[
+       {key:'Pipeline_3mo_USD', label:'Pipeline', color:'#6EE7B7', type:'line'},
+     ]},
+   ]},
+  {id:'QA',    name:'Quality Assurance',   color:'#D4537E', ini:'QA', mgr:'QA Manager',
+   purpose:'Gatekeeper of first-time quality.',
+   kpis:[
+     {k:'FirstTimePass_pct',   l:'First Time Pass %',u:'%',t:'p'},
+     {k:'Factory_Defects_pct', l:'Factory Defects %',u:'%',t:'p'},
+     {k:'Warranty_Linked_pct', l:'Warranty Linked %',u:'%',t:'p'},
+     {k:'Doc_Control_pct',     l:'Doc Control %',    u:'%',t:'p'},
+   ]},
+  {id:'FIN',   name:'Finance',             color:'#EF9F27', ini:'FN', mgr:'Finance Manager',
+   purpose:'Cash, margin, and discipline.',
+   kpis:[
+     {k:'Revenue_USD',              l:'Revenue',          u:'USD',t:'c'},
+     {k:'Budget_USD',               l:'Budget',           u:'USD',t:'c'},
+     {k:'Gross_Margin_pct',         l:'Gross Margin %',   u:'%',  t:'p'},
+     {k:'Cash_Balance_USD',         l:'Cash Balance',     u:'USD',t:'c'},
+     {k:'Cash_Coverage_Months',     l:'Cash Coverage',    u:'mo', t:'p'},
+     {k:'AR_Over_90d_USD',          l:'AR >90 days',      u:'USD',t:'c'},
+     {k:'Backlog_USD',              l:'Backlog',          u:'USD',t:'c'},
+     {k:'Forecast_3mo_Revenue_USD', l:'Forecast 3mo Rev', u:'USD',t:'c'},
+   ],
+   overlayCharts:[
+     {title:'Revenue vs Budget', unit:'USD', datasets:[
+       {key:'Budget_USD',  label:'Budget',  color:'#FCD34D', type:'bar'},
+       {key:'Revenue_USD', label:'Revenue', color:'#EF9F27', type:'bar'},
+     ]},
+     {title:'Gross Margin % & Cash Coverage', unit:'', datasets:[
+       {key:'Gross_Margin_pct',     label:'Gross Margin %',    color:'#F59E0B', type:'line'},
+       {key:'Cash_Coverage_Months', label:'Cash Coverage (mo)',color:'#D97706', type:'line'},
+     ]},
+     {title:'AR >90d & Cash Balance', unit:'USD', datasets:[
+       {key:'Cash_Balance_USD', label:'Cash Balance', color:'#FCD34D', type:'bar'},
+       {key:'AR_Over_90d_USD',  label:'AR >90d',      color:'#EF4444', type:'line'},
+     ]},
+   ]},
+  {id:'SC',   name:'Supply Chain',        color:'#D85A30', ini:'SC', mgr:'SC Manager',
+   purpose:'Material availability without excess cash burn.',
+   kpis:[
+     {k:'OTIF_Customer_pct',   l:'OTIF Customer %',   u:'%',  t:'p'},
+     {k:'OnTime_Supplier_pct', l:'On-Time Supplier %',u:'%',  t:'p'},
+     {k:'PR_Turnaround_Days',  l:'PR Turnaround',     u:'days',t:'p'},
+     {k:'Critical_Stockouts',  l:'Critical Stockouts',u:'cnt',t:'i'},
+     {k:'Inventory_Value_USD', l:'Inventory Value',   u:'USD',t:'c'},
+     {k:'Slow_Moving_USD',     l:'Slow Moving Inv.',  u:'USD',t:'c'},
+   ]},
+  {id:'HR',    name:'Human Resources',     color:'#7F77DD', ini:'HR', mgr:'HR Manager',
+   purpose:'Stability and capability.',
+   kpis:[
+     {k:'Headcount',     l:'Headcount',     u:'ppl',t:'i'},
+     {k:'Turnover_pct',  l:'Turnover %',    u:'%',  t:'p'},
+     {k:'Overtime_Hours',l:'Overtime Hours',u:'hrs',t:'i'},
+     {k:'Training_Hours',l:'Training Hours',u:'hrs',t:'i'},
+     {k:'LTI_Count',     l:'LTI Count',     u:'cnt',t:'i'},
+     {k:'Hours_Worked',  l:'Hours Worked',  u:'hrs',t:'i'},
+   ]},
+  {id:'CS',    name:'Customer Service',    color:'#0891B2', ini:'CS', mgr:'CS Manager',
+   purpose:'Warranty containment and customer confidence.',
+   kpis:[
+     {k:'Claims_Opened',    l:'Claims Opened',    u:'cnt', t:'i'},
+     {k:'Claims_Closed',    l:'Claims Closed',    u:'cnt', t:'i'},
+     {k:'Avg_Closure_Days', l:'Avg Closure Days', u:'days',t:'p'},
+     {k:'Customer_Sat_pct', l:'Customer Sat %',   u:'%',   t:'p'},
+     {k:'Major_Escalations',l:'Major Escalations',u:'cnt', t:'i'},
+   ],
+   overlayCharts:[
+     {title:'Claims Opened vs Closed', unit:'count', datasets:[
+       {key:'Claims_Opened', label:'Opened', color:'#F87171', type:'bar'},
+       {key:'Claims_Closed', label:'Closed', color:'#0891B2', type:'bar'},
+     ]},
+     {title:'Customer Satisfaction %', unit:'%', datasets:[
+       {key:'Customer_Sat_pct', label:'Sat %', color:'#06B6D4', type:'line'},
+     ]},
+     {title:'Avg Closure Days', unit:'days', datasets:[
+       {key:'Avg_Closure_Days', label:'Days', color:'#0E7490', type:'line'},
+     ]},
+   ]},
+  {id:'DESIGN',name:'Design & Technical',  color:'#8B5CF6', ini:'DT', mgr:'TECH Manager',
+   purpose:'Correct drawings, correct BOMs, minimal disruption.',
+   kpis:[
+     {k:'BOM_Accuracy_pct',                l:'BOM Accuracy %',   u:'%',t:'p'},
+     {k:'Drawings_Issued_vs_Required_pct', l:'Drawings Issued %',u:'%',t:'p'},
+     {k:'CRs_Closed_pct',                  l:'CRs Closed %',     u:'%',t:'p'},
+   ]},
+  {id:'IT',    name:'IT',                  color:'#475569', ini:'IT', mgr:'IT Manager',
+   purpose:'System reliability and security.',
+   kpis:[
+     {k:'Uptime_pct',             l:'System Uptime %',u:'%', t:'p'},
+     {k:'Cyber_Incidents',        l:'Cyber Incidents',u:'cnt',t:'i'},
+     {k:'Tickets_Closed_SLA_pct', l:'Tickets SLA %',  u:'%', t:'p'},
+   ]},
+  {id:'MKTG',  name:'Marketing',           color:'#EC4899', ini:'MK', mgr:'Marketing Manager',
+   purpose:'Lead generation efficiency.',
+   kpis:[
+     {k:'Engagement_Growth_pct', l:'Engagement Growth %',u:'%',  t:'p'},
+     {k:'Leads_Generated',       l:'Leads Generated',    u:'cnt',t:'i'},
+     {k:'Campaigns_Active',      l:'Campaigns Active',   u:'cnt',t:'i'},
+   ]},
+  {id:'PD',    name:'Project Development', color:'#14B8A6', ini:'PD', mgr:'Project Dev Lead',
+   purpose:'Product improvement and controlled change.',
+   kpis:[
+     {k:'StageGate_OnTime_pct',  l:'Stage Gate On-Time %',u:'%',  t:'p'},
+     {k:'Gate_Slip_Cases',       l:'Gate Slip Cases',     u:'cnt',t:'i'},
+     {k:'ECN_LeadTime_Days',     l:'ECN Lead Time',       u:'days',t:'p'},
+     {k:'Readiness_to_Build_pct',l:'Readiness to Build %',u:'%',  t:'p'},
+   ]},
+  {id:'PROP',  name:'Property',            color:'#84CC16', ini:'PP', mgr:'Property Manager',
+   purpose:'Facility compliance and maintenance.',
+   kpis:[
+     {k:'Maint_Backlog_Count',l:'Maint Backlog',     u:'cnt',t:'i'},
+     {k:'Fire_OHS_Comp_pct',  l:'Fire/OHS Comp %',  u:'%',  t:'p'},
+     {k:'Security_Incidents', l:'Security Incidents',u:'cnt',t:'i'},
+   ]},
+  {id:'TL',    name:'TL Handover',         color:'#F97316', ini:'TL', mgr:'HandOver Manager',
+   purpose:'Clean handover and brand experience.',
+   kpis:[
+     {k:'Comm_Hours_Planned',   l:'Comm Hrs Planned', u:'hrs',t:'i'},
+     {k:'Comm_Hours_Actual',    l:'Comm Hrs Actual',  u:'hrs',t:'i'},
+     {k:'Handover_OnTime_pct',  l:'Handover On-Time %',u:'%', t:'p'},
+     {k:'Post_Handover_Defects',l:'Post-HO Defects',  u:'cnt',t:'i'},
+   ],
+   overlayCharts:[
+     {title:'Commission Hours: Planned vs Actual', unit:'hrs', datasets:[
+       {key:'Comm_Hours_Planned', label:'Planned', color:'#FDBA74', type:'bar'},
+       {key:'Comm_Hours_Actual',  label:'Actual',  color:'#F97316', type:'bar'},
+     ]},
+     {title:'Handover On-Time % & Post-HO Defects', unit:'', datasets:[
+       {key:'Handover_OnTime_pct',  label:'On-Time %',  color:'#FB923C', type:'line'},
+       {key:'Post_Handover_Defects',label:'Defects',    color:'#EF4444', type:'line'},
+     ]},
+   ]},
+  {id:'CID',   name:'CID',                 color:'#6366F1', ini:'CI', mgr:'CID Lead',
+   purpose:'Structural improvement, not firefighting.',
+   kpis:[
+     {k:'CRs_Raised',        l:'CRs Raised',      u:'cnt',t:'i'},
+     {k:'CRs_Closed_CID',    l:'CRs Closed',      u:'cnt',t:'i'},
+     {k:'Savings_USD',       l:'Savings',          u:'USD',t:'c'},
+     {k:'ISO_Compliance_pct',l:'ISO Compliance %', u:'%',  t:'p'},
+   ],
+   overlayCharts:[
+     {title:'CRs Raised vs Closed', unit:'count', datasets:[
+       {key:'CRs_Raised',     label:'Raised', color:'#A5B4FC', type:'bar'},
+       {key:'CRs_Closed_CID', label:'Closed', color:'#6366F1', type:'bar'},
+     ]},
+   ]},
+];
+
+var USERS = {
+  bod:         {role:'bod',  name:'BOD Name',                    ini:'',color:'#EF9F27',pass:'bod123'},
+  admin:       {role:'admin',name:'System Admin',                ini:'',color:'#374151',pass:'admin123'},
+  production:  {role:'dept', dept:'PROD',  name:'Produciton Manager Name', ini:'',color:'#378ADD',pass:'production123'},
+  sales:       {role:'dept', dept:'SALES', name:'Sales Manager Name',      ini:'',color:'#1D9E75',pass:'sales123'},
+  qa:          {role:'dept', dept:'QA',    name:'QA Manager Name',         ini:'',color:'#D4537E',pass:'qa123'},
+  finance:     {role:'dept', dept:'FIN',   name:'Finance Manager Name',    ini:'',color:'#EF9F27',pass:'finance123'},
+  sc:          {role:'dept', dept:'SC',    name:'SC Manager Name',         ini:'',color:'#D85A30',pass:'sc123'},
+  hr:          {role:'dept', dept:'HR',    name:'HR Manager Name',         ini:'',color:'#7F77DD',pass:'hr123'},
+  cs:          {role:'dept', dept:'CS',    name:'CS Manager Name',         ini:'',color:'#0891B2',pass:'cs123'},
+  design:      {role:'dept', dept:'DESIGN',name:'TECH Manager Name',       ini:'',color:'#8B5CF6',pass:'design123'},
+  it:          {role:'dept', dept:'IT',    name:'IT Manager Name',         ini:'',color:'#475569',pass:'it123'},
+  marketing:   {role:'dept', dept:'MKTG',  name:'Marketing Manager Name',  ini:'',color:'#EC4899',pass:'marketing123'},
+  project_dev: {role:'dept', dept:'PD',    name:'Project Dev Lead Name',   ini:'',color:'#14B8A6',pass:'project_dev123'},
+  property:    {role:'dept', dept:'PROP',  name:'Property Manager Name',   ini:'',color:'#84CC16',pass:'property123'},
+  tl_handover: {role:'dept', dept:'TL',    name:'HandOver Manager Name',   ini:'',color:'#F97316',pass:'tl_handover123'},
+  cid:         {role:'dept', dept:'CID',   name:'CID Lead Name',           ini:'',color:'#6366F1',pass:'cid123'},
+};
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+var GS_DATA = [], GS_HDR = [];
+var U = null, deptId = null, selY = NY, selM = NM;
+var drF = {y:NY-1, m:0}, drT = {y:NY, m:NM};
+var accOpen = null;
+var CH = {};
+var UNLOCKED = {};
+
+Chart.register(ChartDataLabels);
+function el(id){ return document.getElementById(id); }
+
+// ═══════════════════════════════════════════════
+// GOOGLE SHEETS — fetch CSV
+// ═══════════════════════════════════════════════
+function fetchSheetData(cb){
+  setSyncBadge('loading');
+  fetch(SHEET_URL + '&t=' + Date.now())
+    .then(function(r){ return r.text(); })
+    .then(function(csv){
+      var parsed = parseCSV(csv);
+      if(parsed.length < 2){ setSyncBadge('err', 0); if(cb)cb(); return; }
+      GS_HDR  = parsed[0].map(function(h){ return h.trim(); });
+      GS_DATA = parsed.slice(1).filter(function(r){ return r[0] && r[0].trim(); });
+      setSyncBadge('ok', GS_DATA.length);
+      if(cb)cb();
+    })
+    .catch(function(){
+      setSyncBadge('offline', 0);
+      if(cb)cb();
+    });
+}
+
+function parseCSV(text){
+  var rows=[], cur=[], field='', inQ=false;
+  for(var i=0;i<text.length;i++){
+    var ch=text[i];
+    if(inQ){
+      if(ch==='"'&&text[i+1]==='"'){field+='"';i++;}
+      else if(ch==='"'){inQ=false;}
+      else field+=ch;
+    } else {
+      if(ch==='"'){inQ=true;}
+      else if(ch===','){cur.push(field.trim());field='';}
+      else if(ch==='\n'||(ch==='\r'&&text[i+1]==='\n')){
+        if(ch==='\r')i++;
+        cur.push(field.trim());field='';rows.push(cur);cur=[];
+      } else field+=ch;
+    }
+  }
+  if(field||cur.length)cur.push(field.trim());
+  if(cur.length>1||cur[0])rows.push(cur);
+  return rows;
+}
+
+function setSyncBadge(state, count){
+  var b = el('sync-badge');
+  if(!b) return;
+  if(state==='loading') { b.textContent='● Syncing…'; b.style.color='var(--am)'; }
+  else if(state==='ok')  { b.textContent='● Live · '+count+' rows'; b.style.color='var(--hi)'; }
+  else if(state==='err') { b.textContent='● No data'; b.style.color='var(--rd)'; }
+  else                   { b.textContent='● Offline'; b.style.color='var(--hi)'; }
+}
+
+// ═══════════════════════════════════════════════
+// DATA ACCESS
+// FIX #4: Google Sheet stores month as 1-12 (Jan=1).
+//         JS code uses 0-indexed months (Jan=0).
+//         Fix: sheet_month - 1 === code_month
+// ═══════════════════════════════════════════════
+function getGSRow(dept, year, month_0idx){
+  // Returns LAST (latest revision) row for dept/year/month
+  var found=null;
+  for(var i=0;i<GS_DATA.length;i++){
+    var r=GS_DATA[i];
+    if(r[0]===dept&&(parseInt(r[1])-1)===month_0idx&&parseInt(r[2])===year)
+      found=r;
+  }
+  return found;
+}
+function getRevisionCount(dept,year,m0){
+  var n=0;
+  for(var i=0;i<GS_DATA.length;i++){
+    var r=GS_DATA[i];
+    if(r[0]===dept&&(parseInt(r[1])-1)===m0&&parseInt(r[2])===year)n++;
+  }
+  return n;
+}
+function ordinal(n){
+  var s=['th','st','nd','rd'],v=n%100;
+  return n+(s[(v-20)%10]||s[v]||s[0]);
+}
+
+function getGSVal(dept, year, month_0idx, key){
+  var ki = GS_HDR.indexOf(key);
+  if(ki<0) return null;
+  var r = getGSRow(dept, year, month_0idx);
+  if(!r) return null;
+  var v = r[ki];
+  if(v===''||v===undefined||v===null) return null;
+  var n = parseFloat(v);
+  // FIX #1: round to 4 decimal places to eliminate floating-point noise
+  return isNaN(n) ? v : Math.round(n * 10000) / 10000;
+}
+
+// FIX #5: find the latest month/year that has data for a dept
+function getLastDataMonth(deptId){
+  var latest = null;
+  for(var i=0;i<GS_DATA.length;i++){
+    var r=GS_DATA[i];
+    if(r[0]===deptId){
+      var y=parseInt(r[2]);
+      var m=parseInt(r[1]); // 1-indexed from sheet
+      if(!latest || y>latest.y || (y===latest.y && m>latest.m))
+        latest={y:y,m:m};
+    }
+  }
+  return latest; // {y, m} where m is 1-indexed (1=Jan)
+}
+
+// ═══════════════════════════════════════════════
+// LOGIN / LOGOUT
+// ═══════════════════════════════════════════════
+// doLogin is defined later in the CHANGE PASSWORD section
+// (it needs getPass() to check localStorage passwords)
+
+function doLogout(){
+  U=null; deptId=null; accOpen=null;
+  Object.keys(CH).forEach(function(k){ try{CH[k].destroy();}catch(e){} });
+  CH={}; GS_DATA=[]; GS_HDR=[];
+  el('pg-app').style.display='none';
+  el('pg-login').style.display='flex';
+  el('l-u').value=''; el('l-p').value='';
+}
+
+// ═══════════════════════════════════════════════
+// DEPT VIEW — LEFT PANEL
+// ═══════════════════════════════════════════════
+function buildDeptLeft(){
+  var dept=DEPTS.find(function(d){return d.id===deptId;});
+  var row=getGSRow(deptId,selY,selM);
+  var saved=!!row;
+  var comment=saved?getGSVal(deptId,selY,selM,'comment')||'':'';
+  // Previous month for delta indicators
+  var prevM0=selM===0?11:selM-1;
+  var prevY=selM===0?selY-1:selY;
+  var prevRow=getGSRow(deptId,prevY,prevM0);
+  var mO=MN.map(function(m,i){return '<option value="'+i+'"'+(i===selM?' selected':'')+'>'+m+'</option>';}).join('');
+  var yO=YRS.map(function(y){return '<option value="'+y+'"'+(y===selY?' selected':'')+'>'+y+'</option>';}).join('');
+  var revCount=getRevisionCount(deptId,selY,selM);
+  var isLocked=saved&&!UNLOCKED[deptId+'_'+selY+'_'+selM];
+  var inputs=dept.kpis.map(function(k){
+    var v=saved?getGSVal(deptId,selY,selM,k.k):null;
+    var pv=prevRow?getGSVal(deptId,prevY,prevM0,k.k):null;
+    var dlt='',dc='dn';
+    if(v!=null&&pv!=null&&pv!==0){
+      var p=((v-pv)/Math.abs(pv)*100);
+      dlt=(p>=0?'▲':'▼')+Math.abs(p).toFixed(1)+'%';
+      dc=p>=0?'du':'dd';
+    }
+    var revSpan=revCount>1?'<span class="rev-badge">'+ordinal(revCount)+'</span>':'';
+    var deltaSpan=dlt?'<span class="ki-delta '+dc+'">'+dlt+'<span class="ki-vs"> vs '+MN[prevM0]+'</span></span>':'';
+    return '<div class="ki">'
+      +'<div class="ki-lbl-row"><label>'+k.l+' <span style="color:var(--hi);font-weight:400">('+k.u+')</span></label>'
+      +'<span style="display:flex;align-items:center;gap:3px">'+revSpan+deltaSpan+'</span></div>'
+      +'<input class="ki-in" type="number" id="ki-'+k.k+'"'
+      +' step="'+(k.t==='p'?'0.01':'1')+'"'
+      +' value="'+(v!=null?v:'')+'" placeholder="—"'
+      +(isLocked?' readonly style="background:var(--sf2);color:var(--mu)"':'')+'></div>';
+  }).join('');
+  var drMO=function(sel){return MN.map(function(m,i){return '<option value="'+i+'"'+(i===sel?' selected':'')+'>'+m+'</option>';}).join('');};
+  var drYO=function(sel){return YRS.map(function(y){return '<option value="'+y+'"'+(y===sel?' selected':'')+'>'+y+'</option>';}).join('');};
+
+  el('lp-body').innerHTML=
+    '<div class="lsec">Period</div>'
+    +'<div class="my-row">'
+    +'<select class="mysel" id="s-m">'+mO+'</select>'
+    +'<select class="mysel" id="s-y">'+yO+'</select></div>'
+    +'<div class="inp-st">'
+    +'<span style="font-size:11px;color:var(--mu);font-weight:500">Status</span>'
+    +'<span class="badge '+(saved?'bg':'ba')+'" id="st-badge">'+(saved?'Submitted':'Pending')+'</span></div>'
+    +'<div class="lsec">'+dept.name+' — '+MN[selM]+' '+selY+'</div>'
+    +'<div class="ki-list">'+inputs+'</div>'
+    +'<div class="ki" style="margin-bottom:13px">'
+    +'<label>Comment</label>'
+    +'<textarea class="ki-ta" id="ki-cmt" placeholder="Notes…">'+comment+'</textarea></div>'
+    +(isLocked
+        ?'<div class="lock-bar">🔒 Submitted — locked <button class="edit-btn" id="btn-unlock">✏️ Edit &amp; revise</button></div>'
+        :'<button class="sv-btn" id="sv-btn"><span class="spin" id="sv-sp"></span><span id="sv-lb">Save KPIs</span></button>'
+     )
+    +'<div class="sv-ok" id="sv-ok">✓ Saved to Google Sheets</div>'
+    +'<div class="sv-er" id="sv-er"></div>'
+    +'<div class="lsec" style="margin-top:14px">Chart range</div>'
+    +'<div class="dr-box"><div class="dr-quick">'
+    +'<button class="drq" data-quick="ytd">YTD</button>'
+    +'<button class="drq" data-quick="12m">Last 12M</button>'
+    +'<button class="drq" data-quick="all">All data</button></div>'
+    +'<div class="dr-row"><label>From</label>'
+    +'<select class="drsel" id="df-m">'+drMO(drF.m)+'</select>'
+    +'<select class="drsel" id="df-y">'+drYO(drF.y)+'</select></div>'
+    +'<div class="dr-row"><label>To</label>'
+    +'<select class="drsel" id="dt-m">'+drMO(drT.m)+'</select>'
+    +'<select class="drsel" id="dt-y">'+drYO(drT.y)+'</select></div>'
+    +'<button class="dr-apply" id="dr-apply-d">Apply</button></div>'
+    +'<div class="lsec" style="margin-top:14px">Account</div>'
+    +'<button class="chpw-btn" id="btn-chpw">🔑 Change password</button>'
+    +'<div id="chpw-wrap"></div>';
+}
+
+function onPC(){
+  selM=parseInt(el('s-m').value);
+  selY=parseInt(el('s-y').value);
+  buildDeptLeft(); renderDeptRight();
+}
+function setQ(preset){
+  document.querySelectorAll('.drq').forEach(function(b){b.classList.remove('act');});
+  var b=document.querySelector('.drq[data-quick="'+preset+'"]');if(b)b.classList.add('act');
+  if(preset==='ytd') {drF={y:NY,m:0};   drT={y:NY,m:NM};}
+  if(preset==='12m') {drF={y:NY-1,m:NM};drT={y:NY,m:NM};}
+  if(preset==='all') {drF={y:2025,m:0}; drT={y:NY,m:NM};}
+  buildDeptLeft(); renderDeptRight();
+}
+function applyDR(){
+  var fm=el('df-m'),fy=el('df-y'),tm=el('dt-m'),ty=el('dt-y');
+  var bfm=el('bdf-m'),bfy=el('bdf-y'),btm=el('bdt-m'),bty=el('bdt-y');
+  if(fm&&fy){drF={m:parseInt(fm.value),y:parseInt(fy.value)};}
+  if(tm&&ty){drT={m:parseInt(tm.value),y:parseInt(ty.value)};}
+  if(bfm&&bfy){drF={m:parseInt(bfm.value),y:parseInt(bfy.value)};}
+  if(btm&&bty){drT={m:parseInt(btm.value),y:parseInt(bty.value)};}
+  if(U&&U.role==='bod') renderbodRight(accOpen);
+  else renderDeptRight();
+}
+
+function saveDept(){
+  var dept=DEPTS.find(function(d){return d.id===deptId;});
+  var sp=el('sv-sp'),lb=el('sv-lb'),ok=el('sv-ok'),er=el('sv-er');
+  if(!sp)return;
+  sp.style.display='inline-block'; lb.textContent='Saving…';
+  ok.style.display='none'; er.style.display='none';
+  var payload={dept:deptId, month:selM+1, year:selY, // month+1 for sheet (1-indexed)
+    submitted_by:U.username, comment:el('ki-cmt').value||''};
+  dept.kpis.forEach(function(k){
+    var inp=el('ki-'+k.k);
+    if(inp&&inp.value!=='')payload[k.k]=parseFloat(inp.value);
+  });
+  if(!SCRIPT_URL){
+    // Demo: update local GS_DATA so chart updates immediately
+    var newRow=GS_HDR.map(function(h){
+      if(h==='dept')return deptId;
+      if(h==='month')return String(selM+1);
+      if(h==='year')return String(selY);
+      if(h==='submitted_at')return new Date().toLocaleString();
+      if(h==='submitted_by')return U.username;
+      return payload[h]!=null?String(payload[h]):'';
+    });
+    GS_DATA.push(newRow); // always append = new revision
+    delete UNLOCKED[deptId+'_'+selY+'_'+selM];
+    sp.style.display='none'; lb.textContent='Save KPIs';
+    ok.style.display='block';
+    var badge=el('st-badge');if(badge){badge.textContent='Submitted';badge.className='badge bg';}
+    buildDeptLeft();
+    renderDeptRight();
+    setTimeout(function(){ok.style.display='none';},3000);
+    return;
+  }
+  fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'saveKPI',data:payload})})
+    .then(function(r){return r.json();})
+    .then(function(){
+      sp.style.display='none'; lb.textContent='Save KPIs';
+      fetchSheetData(function(){buildDeptLeft();renderDeptRight();});
+      setTimeout(function(){ok.style.display='none';},3000);
+    })
+    .catch(function(){
+      sp.style.display='none'; lb.textContent='Save KPIs';
+      er.textContent='Save failed. Check connection.'; er.style.display='block';
+    });
+}
+
+// ═══════════════════════════════════════════════
+// DEPT VIEW — RIGHT PANEL
+// ═══════════════════════════════════════════════
+function renderDeptRight(){
+  var dept=DEPTS.find(function(d){return d.id===deptId;});
+  el('rp-title').textContent=dept.name;
+  el('rp-sub').textContent=dept.purpose;
+  el('btn-bod-back').classList.add('hidden');
+  var mw=el('rp-msg-btn-wrap');
+  if(mw){var ud=getDeptUnreadBadge(deptId);mw.innerHTML='<button class="msg-action-btn" id="rp-open-msg" data-dept="'+deptId+'">&#x1F4AC; Messages'+ud+'</button>';}
+  var range=buildRange(deptId);
+  killCharts('d_');
+  el('rp-body').innerHTML='<div class="charts-col" id="d-col"></div>';
+  var col=el('d-col');
+  if(dept.overlayCharts){
+    dept.overlayCharts.forEach(function(oc,i){
+      renderOverlayChart(col,'d_oc_'+i,oc,range,deptId);
+    });
+  } else {
+    dept.kpis.forEach(function(kpi,i){
+      var vals=range.dkeys.map(function(dk){return getGSVal(deptId,dk.y,dk.m,kpi.k);});
+      var cid='d_'+i;
+      var div=document.createElement('div');div.className='cc';
+      div.innerHTML='<div class="cc-t">'+kpi.l+'</div>'
+        +'<div class="cc-s">'+kpi.u+' · '+rangeLabel(range)+'</div>'
+        +'<div class="cc-w"><canvas id="'+cid+'"></canvas></div>';
+      col.appendChild(div);
+      CH[cid]=mkLine(cid,range.labels,kpi.l,vals,dept.color,kpi.u);
+    });
+  }
+}
+
+// shared overlay chart renderer
+function renderOverlayChart(col, cid, oc, range, did){
+  var isMulti=oc.datasets.length>1;
+  var legendHtml=isMulti?'<div class="legend">'+oc.datasets.map(function(ds){
+    return '<div class="legend-item"><span class="legend-dot" style="background:'+ds.color+'"></span>'+ds.label+'</div>';
+  }).join('')+'</div>':'';
+  var isTwoBarCheck=oc.datasets.length===2&&oc.datasets[0].type==='bar'&&oc.datasets[1].type==='bar';
+  // Outer wrapper: for twoBar charts use split layout (monthly | total)
+  var wrapper=document.createElement('div');
+  wrapper.className='cc';
+  if(isTwoBarCheck){
+    wrapper.innerHTML='<div class="cc-t">'+oc.title+'</div>'
+      +'<div class="cc-s">'+rangeLabel(range)+'</div>'
+      +legendHtml
+      +'<div class="cc-split">'
+      +'<div class="cc-monthly"><div class="cc-w tall"><canvas id="'+cid+'"></canvas></div></div>'
+      +'<div class="cc-total" id="'+cid+'-tot-card">'
+      +'<div class="cc-total-title">Total</div>'
+      +'<div class="cc-total-sub">'+rangeLabel(range)+'</div>'
+      +'<div class="cc-total-w"><canvas id="'+cid+'-tot"></canvas></div>'
+      +'</div></div>';
+  } else {
+    wrapper.innerHTML='<div class="cc-t">'+oc.title+'</div>'
+      +'<div class="cc-s">'+rangeLabel(range)+'</div>'
+      +legendHtml
+      +'<div class="cc-w'+(isMulti?' tall':'')+'"><canvas id="'+cid+'"></canvas></div>';
+  }
+  var div=wrapper;
+  col.appendChild(div);
+  var many=range.labels.length>24;
+  var isTwoBar=oc.datasets.length===2&&oc.datasets[0].type==='bar'&&oc.datasets[1].type==='bar';
+  var datasets=oc.datasets.map(function(ds){
+    var vals=range.dkeys.map(function(dk){return getGSVal(did,dk.y,dk.m,ds.key);});
+    var base={label:ds.label,data:vals,borderColor:ds.color,
+      backgroundColor:ds.color+(ds.type==='bar'?'bb':'18'),
+      tension:.3,fill:ds.type!=='bar',
+      pointRadius:many?2:4,
+      pointBackgroundColor:ds.color,spanGaps:true,yAxisID:'y'};
+    if(ds.type==='bar'){base.type='bar';base.borderRadius=3;base.borderWidth=1;}
+    return base;
+  });
+  if(isTwoBar){
+    var va=range.dkeys.map(function(dk){return getGSVal(did,dk.y,dk.m,oc.datasets[0].key);});
+    var vb=range.dkeys.map(function(dk){return getGSVal(did,dk.y,dk.m,oc.datasets[1].key);});
+    var rv=va.map(function(a,i){return a&&vb[i]?Math.round(vb[i]/a*1000)/10:null;});
+    datasets.push({type:'line',label:'Ratio %',data:rv,
+      borderColor:'#6366F1',backgroundColor:'transparent',
+      tension:.3,fill:false,pointRadius:many?2:3,
+      pointBackgroundColor:'#6366F1',spanGaps:true,yAxisID:'y2',borderDash:[4,3]});
+    var lw=div.querySelector('.legend');
+    if(lw)lw.innerHTML+='<div class="legend-item"><span class="legend-dot" style="background:#6366F1;border-radius:50%"></span>Ratio %</div>';
+  }
+  var opts=chartOpts(oc.unit||'');
+  if(isTwoBar){opts.scales.y2={type:'linear',position:'right',
+    grid:{drawOnChartArea:false},
+    ticks:{font:{size:10},callback:function(v){return v+'%';}}};}
+  opts.plugins.datalabels={
+    display:function(ctx){return ctx.dataset.type==='bar'&&!many;},
+    color:'#333',anchor:'end',align:'top',font:{size:9,weight:'600'},
+    formatter:function(v){
+      if(v==null)return null;
+      if(oc.unit==='USD')return v>=1e6?(Math.round(v/1e5)/10)+'M':v>=1000?Math.round(v/1000)+'k':'';
+      return Math.round(v);
+    }
+  };
+  CH[cid]=new Chart(document.getElementById(cid),{
+    type:'bar',
+    data:{labels:range.labels,datasets:datasets},
+    options:opts,plugins:[ChartDataLabels]
+  });
+  // ── Summary total chart (right side) for two-bar plan/actual charts ──
+  if(isTwoBar&&document.getElementById(cid+'-tot')){
+    var totA=va.reduce(function(s,v){return s+(v||0);},0);
+    var totB=vb.reduce(function(s,v){return s+(v||0);},0);
+    var totRatio=totA?Math.round(totB/totA*1000)/10:null;
+    var totLabel0=oc.datasets[0].label, totLabel1=oc.datasets[1].label;
+    var totColor0=oc.datasets[0].color, totColor1=oc.datasets[1].color;
+    var totOpts={
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        datalabels:{
+          display:true,color:'#333',anchor:'end',align:'top',
+          font:{size:10,weight:'700'},
+          formatter:function(v){
+            if(v==null)return null;
+            if(oc.unit==='USD')return v>=1e6?(Math.round(v/1e5)/10)+'M':v>=1000?Math.round(v/1000)+'k':'';
+            return Math.round(v);
+          }
+        }
+      },
+      scales:{
+        y:{display:false,beginAtZero:true},
+        x:{grid:{display:false},ticks:{font:{size:10}}}
+      }
+    };
+    CH[cid+'-tot']=new Chart(document.getElementById(cid+'-tot'),{
+      type:'bar',
+      data:{
+        labels:[totLabel0,totLabel1],
+        datasets:[{
+          data:[totA,totB],
+          backgroundColor:[totColor0+'bb',totColor1+'bb'],
+          borderColor:[totColor0,totColor1],
+          borderWidth:1,borderRadius:4
+        }]
+      },
+      options:totOpts,
+      plugins:[ChartDataLabels]
+    });
+    // Show ratio below total chart
+    if(totRatio!==null){
+      var totCard=document.getElementById(cid+'-tot-card');
+      if(totCard){
+        var ratioEl=document.createElement('div');
+        ratioEl.style.cssText='margin-top:6px;text-align:center;font-size:11px;font-weight:700;color:#6366F1';
+        ratioEl.textContent='Ratio: '+totRatio+'%';
+        totCard.appendChild(ratioEl);
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════
+// bod VIEW — LEFT PANEL
+// ═══════════════════════════════════════════════
+function buildbodLeft(){
+  var drMO=function(sel){return MN.map(function(m,i){return '<option value="'+i+'"'+(i===sel?' selected':'')+'>'+m+'</option>';}).join('');};
+  var drYO=function(sel){return YRS.map(function(y){return '<option value="'+y+'"'+(y===sel?' selected':'')+'>'+y+'</option>';}).join('');};
+  var html='<div class="lsec">Chart range</div>'
+    +'<div class="dr-box"><div class="dr-quick">'
+    +'<button class="drq" data-quick="ytd">YTD</button>'
+    +'<button class="drq" data-quick="12m">Last 12M</button>'
+    +'<button class="drq" data-quick="all">All data</button></div>'
+    +'<div class="dr-row"><label>From</label>'
+    +'<select class="drsel" id="bdf-m">'+drMO(drF.m)+'</select>'
+    +'<select class="drsel" id="bdf-y">'+drYO(drF.y)+'</select></div>'
+    +'<div class="dr-row"><label>To</label>'
+    +'<select class="drsel" id="bdt-m">'+drMO(drT.m)+'</select>'
+    +'<select class="drsel" id="bdt-y">'+drYO(drT.y)+'</select></div>'
+    +'<button class="dr-apply" id="dr-apply-b">Apply</button></div>'
+    +'<div class="lsec">Departments</div>';
+
+  DEPTS.forEach(function(d){
+    var hasRow=!!getGSRow(d.id,NY,NM);
+    var open=accOpen===d.id;
+    // FIX #5: last data month per dept
+    var lastDM=getLastDataMonth(d.id);
+    var lastLabel,lastClass;
+    if(!lastDM){lastLabel='No data yet';lastClass='miss';}
+    else{
+      lastLabel='Last: '+MN[lastDM.m-1]+' '+lastDM.y;
+      // warn if last data is more than 1 month behind current
+      var monthsAgo=(NY-lastDM.y)*12+(NM-(lastDM.m-1));
+      lastClass=monthsAgo<=1?'ok':(monthsAgo<=2?'warn':'miss');
+    }
+    html+='<div class="acc" id="acc-'+d.id+'">'
+      +'<div class="acc-h'+(open?' open':'')+'" data-dept="'+d.id+'">'
+      +'<span class="ah-dot" style="background:'+d.color+'"></span>'
+      +'<div class="ah-info">'
+      +'<div class="ah-name">'+d.name+'</div>'
+      +'<div class="ah-last '+lastClass+'">'+lastLabel+'</div>'
+      +'</div>'
+      +'<span class="ah-st '+(hasRow?'st-ok':'st-pend')+'"></span>'
+      +'<span class="ah-ch'+(open?' open':'')+'">▶</span>'
+      +'</div>'
+      +'<div class="acc-b'+(open?' open':'')+'" id="ab-'+d.id+'">'+buildAccBody(d)+'</div>'
+      +'</div>';
+  });
+  el('lp-body').innerHTML=html;
+  // Admin: append user management panel below depts
+  if(U&&U.role==='admin'){
+    el('lp-body').innerHTML+=
+      '<div class="lsec" style="margin-top:14px">Admin</div>'
+      +'<div style="background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r);padding:10px 11px">'+buildAdminPanel()+'</div>';
+  }
+  // BOD + Admin: change password button at bottom
+  el('lp-body').innerHTML+=
+    '<div class="lsec" style="margin-top:14px">Account</div>'
+    +'<button class="chpw-btn" id="btn-chpw">🔑 Change password</button>'
+    +'<div id="chpw-wrap"></div>';
+}
+
+function buildAccBody(dept){
+  // Use latest available data month, not current calendar month
+  var lastDM=getLastDataMonth(dept.id);
+  if(!lastDM){
+    return '<div style="font-size:12px;color:var(--hi);padding:4px 0">No data available yet.</div>'
+      +'<button class="vc-btn" data-dept="'+dept.id+'">View all charts →</button>';
+  }
+  var curM0=lastDM.m-1; // convert to 0-indexed
+  var curY=lastDM.y;
+  var prevM0=curM0===0?11:curM0-1;
+  var prevY=curM0===0?curY-1:curY;
+  var row=getGSRow(dept.id,curY,curM0);
+  var prevRow=getGSRow(dept.id,prevY,prevM0);
+  var rows=dept.kpis.map(function(k){
+    var v=getGSVal(dept.id,curY,curM0,k.k);
+    var pv=prevRow?getGSVal(dept.id,prevY,prevM0,k.k):null;
+    var dlt='',dc='dn';
+    if(v!=null&&pv!=null&&pv!==0){
+      var p=((v-pv)/Math.abs(pv)*100);
+      dlt=(p>=0?'▲':'▼')+Math.abs(p).toFixed(1)+'%';
+      dc=p>=0?'du':'dd';
+    }
+    return '<div class="ks-row">'
+      +'<span class="ks-l">'+k.l+'</span>'
+      +'<span class="ks-v" style="color:'+dept.color+'">'+(v!=null?fmtV(v,k):'—')+'</span>'
+      +(dlt?'<span class="ks-d '+dc+'">'+dlt+'</span>':'')
+      +'</div>';
+  }).join('');
+  var cmt=row?getGSVal(dept.id,curY,curM0,'comment')||'':'';
+  return '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--hi);margin-bottom:6px">Snapshot — '+MN[curM0]+' '+curY+'</div>'
+    +'<div>'+rows+'</div>'
+    +(cmt?'<div class="ks-cmt">'+cmt+'</div>':'')
+    +'<button class="vc-btn" data-dept="'+dept.id+'">View all charts →</button>';
+}
+
+function toggleAcc(id){
+  accOpen=accOpen===id?null:id;
+  DEPTS.forEach(function(d){
+    var h=document.querySelector('#acc-'+d.id+' .acc-h');
+    var b=el('ab-'+d.id);
+    var c=document.querySelector('#acc-'+d.id+' .ah-ch');
+    var open=accOpen===d.id;
+    if(h)h.classList.toggle('open',open);
+    if(b)b.classList.toggle('open',open);
+    if(c)c.classList.toggle('open',open);
+  });
+  if(accOpen) renderbodRight(accOpen);
+  else        renderbodRight(null);
+}
+function bodViewDept(id){ accOpen=id; buildbodLeft(); renderbodRight(id); }
+
+// ═══════════════════════════════════════════════
+// bod VIEW — RIGHT PANEL
+// ═══════════════════════════════════════════════
+function renderbodRight(id){
+  killCharts('b_');
+  var body=el('rp-body');
+  var backBtn=el('btn-bod-back');
+
+  if(!id){
+    // FIX #6: hide back button on overview
+    if(backBtn) backBtn.classList.add('hidden');
+    el('rp-title').textContent='All Departments';
+    var subm=DEPTS.filter(function(d){return !!getGSRow(d.id,NY,NM);}).length;
+    el('rp-sub').textContent=MN[NM]+' '+NY+' · '+subm+'/'+DEPTS.length+' submitted';
+    var tRows=DEPTS.map(function(d){
+      var r=getGSRow(d.id,NY,NM);var sub=!!r;
+      var ts=sub?getGSVal(d.id,NY,NM,'submitted_at')||'—':'—';
+      return '<tr>'
+        +'<td><span style="display:inline-flex;align-items:center;gap:6px">'
+        +'<span style="width:7px;height:7px;border-radius:50%;background:'+d.color+';display:inline-block"></span>'
+        +d.name+'</span></td>'
+        +'<td style="color:var(--mu)">'+d.mgr+'</td>'
+        +'<td><span class="badge '+(sub?'bg':'ba')+'">'+(sub?'Submitted':'Pending')+'</span></td>'
+        +'<td style="color:var(--mu);font-size:11px">'+ts+'</td>'
+        +'<td><button class="vc-btn" style="width:auto;padding:4px 10px;margin:0" data-dept="'+d.id+'">Charts →</button></td>'
+        +'</tr>';
+    }).join('');
+    var ovCharts=DEPTS.map(function(d,i){
+      return '<div class="cc">'
+        +'<div class="cc-t" style="display:flex;align-items:center;gap:6px">'
+        +'<span style="width:8px;height:8px;border-radius:50%;background:'+d.color+';display:inline-block;flex-shrink:0"></span>'
+        +d.name+' — '+d.kpis[0].l+'</div>'
+        +'<div class="cc-s">'+d.kpis[0].u+'</div>'
+        +'<div class="cc-w"><canvas id="b_ov_'+i+'"></canvas></div></div>';
+    }).join('');
+    body.innerHTML='<div class="stbl-w">'
+      +'<div class="stbl-h">Submission status — '+MN[NM]+' '+NY
+      +'<span style="font-size:11px;font-weight:400;color:var(--mu)">'+subm+'/'+DEPTS.length+'</span></div>'
+      +'<table><thead><tr><th>Department</th><th>Manager</th><th>Status</th><th>Submitted at</th><th></th></tr></thead>'
+      +'<tbody>'+tRows+'</tbody></table></div>'
+      +'<div class="charts-col">'+ovCharts+'</div>';
+    DEPTS.forEach(function(d,i){
+      var range=buildRange(d.id);
+      var vals=range.dkeys.map(function(dk){return getGSVal(d.id,dk.y,dk.m,d.kpis[0].k);});
+      CH['b_ov_'+i]=mkLine('b_ov_'+i,range.labels,d.kpis[0].l,vals,d.color,d.kpis[0].u);
+    });
+    return;
+  }
+
+  // FIX #6: show back button when viewing a specific dept
+  if(backBtn) backBtn.classList.remove('hidden');
+  var mw2=el('rp-msg-btn-wrap');
+  if(mw2){mw2.innerHTML='<button class="msg-action-btn" id="rp-open-msg" data-dept="'+id+'">&#x1F4AC; Message</button>';}
+  var dept=DEPTS.find(function(d){return d.id===id;});
+  el('rp-title').textContent=dept.name;
+  el('rp-sub').textContent=dept.purpose;
+  var range=buildRange(id);
+  body.innerHTML='<div class="charts-col" id="b-col"></div>';
+  var col=el('b-col');
+  if(dept.overlayCharts){
+    dept.overlayCharts.forEach(function(oc,i){
+      renderOverlayChart(col,'b_oc_'+i,oc,range,id);
+    });
+  } else {
+    dept.kpis.forEach(function(kpi,i){
+      var vals=range.dkeys.map(function(dk){return getGSVal(id,dk.y,dk.m,kpi.k);});
+      var cid='b_'+i;
+      var div=document.createElement('div');div.className='cc';
+      div.innerHTML='<div class="cc-t">'+kpi.l+'</div>'
+        +'<div class="cc-s">'+kpi.u+' · '+rangeLabel(range)+'</div>'
+        +'<div class="cc-w"><canvas id="'+cid+'"></canvas></div>';
+      col.appendChild(div);
+      CH[cid]=mkLine(cid,range.labels,kpi.l,vals,dept.color,kpi.u);
+    });
+  }
+}
+
+// ═══════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════
+function buildRange(did){
+  var labels=[],dkeys=[];
+  var cy=drF.y,cm=drF.m;
+  while(cy<drT.y||(cy===drT.y&&cm<=drT.m)){
+    labels.push(MN[cm]+' '+cy);
+    dkeys.push({dept:did,y:cy,m:cm}); // m is 0-indexed
+    cm++; if(cm>11){cm=0;cy++;} if(labels.length>60)break;
+  }
+  return{labels:labels,dkeys:dkeys};
+}
+function rangeLabel(range){
+  if(!range.labels.length)return'';
+  return range.labels[0]+(range.labels.length>1?' → '+range.labels[range.labels.length-1]:'');
+}
+function killCharts(pfx){
+  Object.keys(CH).filter(function(k){return k.indexOf(pfx)===0;})
+    .forEach(function(k){try{CH[k].destroy();}catch(e){}delete CH[k];});
+}
+
+// FIX #1: fmtV rounds to 1 decimal for percentages, no float noise
+function fmtV(v,k){
+  if(v==null)return'—';
+  if(k.t==='c')return'$'+Number(Math.round(v)).toLocaleString();
+  if(k.t==='p')return(Math.round(v*10)/10)+(k.u==='%'?'%':'');
+  return String(Math.round(v));
+}
+
+function chartOpts(unit){
+  return{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){
+      var v=ctx.raw;if(v==null)return'No data';
+      // FIX #1: round tooltip values
+      if(unit==='%')return(Math.round(v*10)/10)+'%';
+      if(unit==='USD')return'$'+Math.round(v).toLocaleString();
+      if(unit==='hrs'||unit==='count'||unit==='cnt'||unit==='ppl')return Math.round(v).toLocaleString();
+      return(Math.round(v*100)/100).toString();
+    }}}},
+    scales:{
+      y:{beginAtZero:unit!=='%',grid:{color:'rgba(0,0,0,.05)'},
+         ticks:{font:{size:10},callback:function(v){
+           // FIX #1: round Y-axis tick labels — eliminates 6.800000001% problem
+           if(unit==='%')return(Math.round(v*10)/10)+'%';
+           if(unit==='USD')return v>=1e6?(Math.round(v/1e5)/10)+'M':v>=1000?Math.round(v/1000)+'k':'$'+Math.round(v);
+           if(unit==='hrs'||unit==='count'||unit==='cnt'||unit==='ppl')return Math.round(v).toLocaleString();
+           return Math.round(v*100)/100;
+         }}},
+      x:{grid:{display:false},ticks:{font:{size:10},maxRotation:45,
+         autoSkip:true,maxTicksLimit:14}}
+    }
+  };
+}
+
+function mkLine(id,labels,label,data,color,unit){
+  var many=labels.length>24;
+  var opts=chartOpts(unit);
+  opts.plugins.datalabels={
+    display:!many,color:color,anchor:'end',align:'top',
+    font:{size:9,weight:'600'},
+    formatter:function(v){
+      if(v==null)return null;
+      if(unit==='%')return(Math.round(v*10)/10)+'%';
+      if(unit==='USD')return v>=1e6?(Math.round(v/1e5)/10)+'M':v>=1000?Math.round(v/1000)+'k':'';
+      return Math.round(v);
+    }
+  };
+  return new Chart(document.getElementById(id),{
+    type:'line',
+    data:{labels:labels,datasets:[{label:label,data:data,
+      borderColor:color,backgroundColor:color+'14',tension:.3,fill:true,
+      pointRadius:many?2:4,pointBackgroundColor:color,spanGaps:true}]},
+    options:opts,plugins:[ChartDataLabels]
+  });
+}
+
+
+// ═══════════════════════════════════════════════
+// MESSAGING — BOD <-> Dept 2-way communication
+// ═══════════════════════════════════════════════
+var msgDeptTarget=null;
+function getMsgs(){try{var r=localStorage.getItem('cmi_msgs');return r?JSON.parse(r):[];}catch(e){return[];}}
+function saveMsgsLocal(m){try{localStorage.setItem('cmi_msgs',JSON.stringify(m));}catch(e){}}
+function getUnreadCount(deptId){
+  var msgs=getMsgs();var me=U?U.username:'';
+  return msgs.filter(function(m){
+    var mine=(U&&U.role==='dept'&&m.dept===deptId&&m.fromRole!=='dept')
+            ||(U&&(U.role==='bod'||U.role==='admin')&&m.dept===deptId&&m.fromRole==='dept');
+    return mine&&(!m.read||m.read.indexOf(me)<0);
+  }).length;
+}
+function getDeptUnreadBadge(deptId){
+  var n=getUnreadCount(deptId);
+  return n>0?'<span class="unread-dot" title="'+n+' unread"></span>':'';
+}
+function openMsgPanel(deptId){
+  var dept=DEPTS.find(function(d){return d.id===deptId;});
+  msgDeptTarget=deptId;
+  el('msg-panel-title').textContent='\u{1F4AC} '+(dept?dept.name:deptId);
+  el('msg-panel').classList.add('open');
+  refreshMsgThread();
+  var msgs=getMsgs();var me=U?U.username:'';
+  msgs.forEach(function(m){if(m.dept===deptId){if(!m.read)m.read=[];if(m.read.indexOf(me)<0)m.read.push(me);}});
+  saveMsgsLocal(msgs);
+}
+function closeMsgPanel(){el('msg-panel').classList.remove('open');msgDeptTarget=null;}
+function refreshMsgThread(){
+  if(!msgDeptTarget)return;
+  var msgs=getMsgs().filter(function(m){return m.dept===msgDeptTarget;});
+  var thread=el('msg-thread');
+  if(!msgs.length){thread.innerHTML='<div style="font-size:12px;color:var(--hi);text-align:center;padding:20px">No messages yet.</div>';return;}
+  thread.innerHTML=msgs.map(function(m){
+    var isMe=U&&m.from===U.username;
+    return '<div style="display:flex;flex-direction:column;align-items:'+(isMe?'flex-end':'flex-start')+'">'
+      +'<div class="msg-bubble '+(isMe?'msg-from-me':'msg-from-other')+'">'
+      +esc(m.text)
+      +'<div class="msg-meta">'+m.fromRole.toUpperCase()+(isMe?' (you)':' \u00b7 '+m.from)+' \u00b7 '+new Date(m.ts).toLocaleString()+'</div>'
+      +'</div></div>';
+  }).join('');
+  thread.scrollTop=thread.scrollHeight;
+}
+function sendMsg(){
+  var inp=el('msg-txt-input');var text=(inp.value||'').trim();
+  if(!text||!msgDeptTarget||!U)return;
+  var msg={id:Date.now(),from:U.username,fromRole:U.role,dept:msgDeptTarget,
+    text:text,ts:new Date().toISOString(),read:[U.username]};
+  var msgs=getMsgs();msgs.push(msg);saveMsgsLocal(msgs);
+  inp.value='';refreshMsgThread();
+  if(typeof GAS_MSG_URL!=='undefined'&&GAS_MSG_URL){
+    fetch(GAS_MSG_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'sendMsg',msg:msg})}).catch(function(){});
+  }
+}
+function showMsgHistory(){
+  var msgs=getMsgs().slice().reverse();
+  el('modal-title').textContent='Message History';
+  el('modal-body').innerHTML=!msgs.length
+    ?'<div style="color:var(--hi);font-size:12px;text-align:center;padding:20px">No messages yet.</div>'
+    :msgs.map(function(m){
+      var dept=DEPTS.find(function(d){return d.id===m.dept;});
+      return '<div class="hist-item"><div class="hist-meta">'+m.fromRole.toUpperCase()+' \u00b7 '+m.from+' \u2192 '+(dept?dept.name:m.dept)+' \u00b7 '+new Date(m.ts).toLocaleString()+'</div><div class="hist-text">'+esc(m.text)+'</div></div>';
+    }).join('');
+  el('modal-overlay').style.display='flex';
+}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+// ═══════════════════════════════════════════════
+// CHANGE PASSWORD
+// Passwords are stored in localStorage so they
+// persist across sessions on the same browser.
+// Key: cmi_pw_[username]
+// ═══════════════════════════════════════════════
+function getPass(username){
+  // Priority: localStorage (synced from GAS) → USERS default
+  try{
+    var stored=localStorage.getItem('cmi_pw_'+username);
+    return stored||USERS[username].pass;
+  }catch(e){ return USERS[username] ? USERS[username].pass : ''; }
+}
+
+// Pull all passwords from GAS → store in localStorage
+// Called once on page load so login always has fresh passwords
+function syncPasswordsFromGAS(cb){
+  if(!GAS_PW_URL){if(cb)cb();return;}
+  fetch(GAS_PW_URL+'?action=getPasswords&t='+Date.now())
+    .then(function(r){return r.json();})
+    .then(function(d){
+      // d = {username1:'hashedOrPlain', username2:'...', ...}
+      if(d&&typeof d==='object'){
+        Object.keys(d).forEach(function(u){
+          try{localStorage.setItem('cmi_pw_'+u, d[u]);}catch(e){}
+        });
+      }
+      if(cb)cb();
+    })
+    .catch(function(){if(cb)cb();}); // silently fall back to localStorage
+}
+
+function doLogin(){
+  var u=el('l-u').value.trim().toLowerCase();
+  var p=el('l-p').value;
+  var acc=USERS[u];
+  var errEl=el('l-err');
+  if(!acc){
+    errEl.textContent='Unknown username.';
+    errEl.style.cssText='color:var(--rd);font-size:12px;margin-top:9px;padding:7px 10px;background:var(--rd-bg);border-radius:var(--r);display:block';
+    return;
+  }
+  // Check against stored password (or default)
+  if(getPass(u)!==p){
+    errEl.textContent='Incorrect password.';
+    errEl.style.cssText='color:var(--rd);font-size:12px;margin-top:9px;padding:7px 10px;background:var(--rd-bg);border-radius:var(--r);display:block';
+    return;
+  }
+  errEl.style.display='none';
+  U=Object.assign({},acc,{username:u});
+  el('pg-login').style.display='none';
+  el('pg-app').style.display='flex';
+  var av=el('t-av');
+  av.textContent=U.ini?U.ini:U.name.trim().charAt(0).toUpperCase();
+  av.style.background=U.color+'25'; av.style.color=U.color;
+  el('t-badge').textContent=(U.role==='bod')?'BOD':(U.role==='admin'?'ADMIN':U.dept);
+  el('t-badge').className='tbadge '+(U.role==='dept'?'tba':'tbm');
+  el('t-name').textContent=U.name;
+  setSyncBadge('loading');
+  fetchSheetData(function(){
+    if(U.role==='bod'||U.role==='admin'){
+      buildbodLeft(); renderbodRight(null);
+    } else {
+      deptId=U.dept; selY=NY; selM=NM;
+      buildDeptLeft(); renderDeptRight();
+    }
+  });
+}
+
+function showChangePw(){
+  var wrap=el('chpw-wrap');
+  if(!wrap)return;
+  // Toggle: if already open, close it
+  if(wrap.innerHTML.trim()){wrap.innerHTML='';return;}
+  wrap.innerHTML=
+    '<div class="pw-modal">'
+    +'<label>Current password</label>'
+    +'<input type="password" id="pw-cur" placeholder="Current password">'
+    +'<label>New password</label>'
+    +'<input type="password" id="pw-new" placeholder="At least 6 characters">'
+    +'<label>Confirm new password</label>'
+    +'<input type="password" id="pw-cfm" placeholder="Repeat new password">'
+    +'<button class="pw-save" id="pw-save-btn">Save new password</button>'
+    +'<div class="pw-msg" id="pw-msg"></div>'
+    +'</div>';
+  el('pw-save-btn').addEventListener('click',function(){
+    var cur=el('pw-cur').value;
+    var nw=el('pw-new').value;
+    var cfm=el('pw-cfm').value;
+    var msg=el('pw-msg');
+    if(cur!==getPass(U.username)){
+      msg.textContent='Current password is incorrect.';
+      msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--rd)';return;
+    }
+    if(nw.length<6){
+      msg.textContent='New password must be at least 6 characters.';
+      msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--rd)';return;
+    }
+    if(nw!==cfm){
+      msg.textContent='Passwords do not match.';
+      msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--rd)';return;
+    }
+    // Save locally first
+    try{ localStorage.setItem('cmi_pw_'+U.username, nw); }catch(e){}
+    msg.textContent='✓ Saving…';
+    msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--am)';
+    // Push to GAS for cross-device sync
+    if(GAS_PW_URL){
+      fetch(GAS_PW_URL,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'setPassword',username:U.username,password:nw})
+      })
+      .then(function(){
+        msg.textContent='✓ Password changed & synced across all devices.';
+        msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--gn)';
+        setTimeout(function(){wrap.innerHTML='';},2500);
+      })
+      .catch(function(){
+        msg.textContent='✓ Saved locally. Sync to other devices failed — check GAS_PW_URL.';
+        msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--am)';
+        setTimeout(function(){wrap.innerHTML='';},3000);
+      });
+    } else {
+      msg.textContent='✓ Password changed (this browser only). Set GAS_PW_URL to sync across devices.';
+      msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--gn)';
+      setTimeout(function(){wrap.innerHTML='';},2500);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+// ADMIN — user management panel in BOD sidebar
+// ═══════════════════════════════════════════════
+function buildAdminPanel(){
+  var rows=Object.entries(USERS).map(function(entry){
+    var uname=entry[0], acc=entry[1];
+    var roleLabel=acc.role==='bod'?'BOD':acc.role==='admin'?'Admin':(acc.dept||acc.role);
+    var hasCusPw=false;
+    try{hasCusPw=!!localStorage.getItem('cmi_pw_'+uname);}catch(e){}
+    return '<div style="display:flex;align-items:center;gap:7px;padding:6px 0;border-bottom:1px solid var(--bd)">'
+      +'<span style="width:7px;height:7px;border-radius:50%;background:'+acc.color+';flex-shrink:0"></span>'
+      +'<span style="flex:1;font-size:12px;font-weight:500">'+uname+'</span>'
+      +'<span style="font-size:10px;color:var(--mu)">'+roleLabel+'</span>'
+      +(hasCusPw?'<span title="Custom password set" style="font-size:10px;color:var(--am)">🔑</span>':'')
+      +'</div>';
+  }).join('');
+  return '<div style="font-size:10px;color:var(--hi);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.7px">User accounts</div>'
+    +rows
+    +'<div style="font-size:10px;color:var(--hi);margin-top:8px;line-height:1.5">🔑 = custom password set<br>Passwords stored in browser localStorage.</div>';
+}
+
+// ═══════════════════════════════════════════════
+// EVENT DELEGATION — zero inline handlers
+// ═══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',function(){
+  // Pre-load passwords from GAS (so login on any device uses latest password)
+  syncPasswordsFromGAS(function(){});
+  el('btn-login').addEventListener('click',doLogin);
+  el('btn-logout').addEventListener('click',doLogout);
+  el('l-p').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+  el('l-u').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+
+  // FIX #6: back button wired here
+  el('btn-bod-back').addEventListener('click',function(){
+    accOpen=null; buildbodLeft(); renderbodRight(null);
+  });
+
+  // sync badge click to refresh
+  el('sync-badge').addEventListener('click',function(){
+    if(!U)return;
+    fetchSheetData(function(){
+      if(U.role==='bod'||U.role==='admin'){buildbodLeft();renderbodRight(accOpen);}
+      else{buildDeptLeft();renderDeptRight();}
+    });
+  });
+
+  el('lp-body').addEventListener('click',function(e){
+    var t=e.target;
+    var ah=t.closest('.acc-h');if(ah){toggleAcc(ah.dataset.dept);return;}
+    if((t.classList.contains('vc-btn')||t.closest('.vc-btn'))&&(t.dataset.dept||t.closest('[data-dept]'))){
+      var dept=(t.dataset.dept||t.closest('[data-dept]').dataset.dept);
+      bodViewDept(dept);return;
+    }
+    if(t.closest('#sv-btn')){saveDept();return;}
+    if(t.id==='btn-unlock'||t.closest('#btn-unlock')){UNLOCKED[deptId+'_'+selY+'_'+selM]=true;buildDeptLeft();return;}
+    if(t.id==='btn-chpw'||t.closest('#btn-chpw')){showChangePw();return;}
+    if(t.dataset.quick){setQ(t.dataset.quick);return;}
+    if(t.id==='dr-apply-d'||t.id==='dr-apply-b'){applyDR();return;}
+  });
+  el('lp-body').addEventListener('change',function(e){
+    if(e.target.id==='s-m'||e.target.id==='s-y'){onPC();}
+  });
+  el('rp-body').addEventListener('click',function(e){
+    var t=e.target;
+    var btn=t.closest('[data-dept]');
+    if(btn&&btn.classList.contains('vc-btn')){bodViewDept(btn.dataset.dept);return;}
+    if(t.classList.contains('vc-btn')&&t.dataset.dept){bodViewDept(t.dataset.dept);}
+  });
+  document.body.addEventListener('click',function(e){
+    var t=e.target;
+    if(t.id==='rp-open-msg'||t.closest('#rp-open-msg')){
+      var d=t.dataset.dept||(t.closest('[data-dept]')||{}).dataset.dept||deptId;
+      if(d)openMsgPanel(d);return;}
+    if(t.id==='rp-hist-btn'||t.closest('#rp-hist-btn')){showMsgHistory();return;}
+    if(t.id==='msg-panel-close-btn'){closeMsgPanel();return;}
+    if(t.id==='msg-send-btn'){sendMsg();return;}
+    if(t.id==='modal-close-x'||t===el('modal-overlay')){el('modal-overlay').style.display='none';return;}
+  });
+  el('msg-txt-input').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}});
+});
+</script>
+</body>
+</html>
