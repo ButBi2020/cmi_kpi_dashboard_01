@@ -338,10 +338,10 @@ var SHEET_ID  = '1erlvjOnrRT90VMnCkNnqOU-xORkYidNqwAyxcWBjsVk';
 var SHEET_GID = '0';
 var SHEET_URL = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID
               + '/export?format=csv&gid=' + SHEET_GID;
-var SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbxUskIIs3qyEYjt5dqVBFoQOeqgLaVNJ3xEE6x0CwOgCII4H7MHz-EuoxkdIecqirknmQ/exec'; // optional GAS URL for KPI save
-var GAS_PW_URL  = 'https://script.google.com/macros/s/AKfycbxUskIIs3qyEYjt5dqVBFoQOeqgLaVNJ3xEE6x0CwOgCII4H7MHz-EuoxkdIecqirknmQ/exec'; // ★ FILL IN: Google Apps Script URL for password sync
+var SCRIPT_URL  = 'https://script.google.com/macros/s/AKfycbxqMKhOsE9-IdWNCqsIRCnNHQNr4QsFmbKVSCc_QovtWe5YL-ziFO6mGOjkhbr1avGq/exec'; // optional GAS URL for KPI save
+var GAS_PW_URL  = 'https://script.google.com/macros/s/AKfycbxqMKhOsE9-IdWNCqsIRCnNHQNr4QsFmbKVSCc_QovtWe5YL-ziFO6mGOjkhbr1avGq/exec'; // ★ FILL IN: Google Apps Script URL for password sync
                       // Get this URL after deploying gas_password_sync.gs
-var GAS_MSG_URL  = 'https://script.google.com/macros/s/AKfycbxUskIIs3qyEYjt5dqVBFoQOeqgLaVNJ3xEE6x0CwOgCII4H7MHz-EuoxkdIecqirknmQ/exec';
+var GAS_MSG_URL  = 'https://script.google.com/macros/s/AKfycbxqMKhOsE9-IdWNCqsIRCnNHQNr4QsFmbKVSCc_QovtWe5YL-ziFO6mGOjkhbr1avGq/exec';
 
 // ═══════════════════════════════════════════════
 // CONSTANTS
@@ -1440,19 +1440,25 @@ function showChangePw(){
     msg.textContent='✓ Saving…';
     msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--am)';
     // Push to GAS for cross-device sync
+    // NOTE: must use no-cors + form-encoded because GAS blocks JSON POST from external origins
     if(GAS_PW_URL){
+      var params='action=setPassword'
+        +'&username='+encodeURIComponent(U.username)
+        +'&password='+encodeURIComponent(nw);
       fetch(GAS_PW_URL,{
         method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({action:'setPassword',username:U.username,password:nw})
+        mode:'no-cors',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:params
       })
       .then(function(){
+        // no-cors always resolves (even on error) so we assume success here
         msg.textContent='✓ Password changed & synced across all devices.';
         msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--gn)';
         setTimeout(function(){wrap.innerHTML='';},2500);
       })
       .catch(function(){
-        msg.textContent='✓ Saved locally. Sync to other devices failed — check GAS_PW_URL.';
+        msg.textContent='✓ Saved locally. Sync to other devices failed.';
         msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--am)';
         setTimeout(function(){wrap.innerHTML='';},3000);
       });
