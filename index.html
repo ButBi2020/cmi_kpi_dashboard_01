@@ -1347,33 +1347,60 @@ function getPass(username){
   }catch(e){ return USERS[username] ? USERS[username].pass : ''; }
 }
 
-// ── GAS fetch helper — handles HtmlService text response ─────────────────────
-function gasFetch(url, cb) {
-  fetch(url, {mode:'cors'})
-    .then(function(r){ return r.text(); })
-    .then(function(txt){
-      // HtmlService wraps JSON in HTML — extract the JSON part
-      var match = txt.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-      var data  = match ? JSON.parse(match[0]) : null;
-      cb(null, data);
-    })
-    .catch(function(err){ cb(err, null); });
+// ══════════════════════════════════════════════════════════════════
+// PASSWORD SYNC — reads from Google Sheet CSV (same CORS-free method
+// as KPI data), writes via GAS GET (works when user is logged into
+// Google in same browser, falls back gracefully if blocked)
+// ══════════════════════════════════════════════════════════════════
+
+// Sheet GID for "Passwords" tab — update this after first deploy
+// To find: open Google Sheet → click Passwords tab → look at URL: ...#gid=XXXXXX
+var PW_SHEET_GID = '41732400'; // ← FILL IN after creating Passwords sheet
+
+function getPwSheetUrl(){
+  return 'https://docs.google.com/spreadsheets/d/'+SHEET_ID
+    +'/export?format=csv&gid='+PW_SHEET_GID+'&t='+Date.now();
 }
 
-// Pull all passwords from GAS → store in localStorage
+// Pull passwords from Sheet CSV → localStorage
 function syncPasswordsFromGAS(cb){
-  if(!GAS_PW_URL){if(cb)cb();return;}
-  gasFetch(
-    GAS_PW_URL+'?action=getPasswords&t='+Date.now(),
-    function(err, d){
-      if(!err && d && typeof d==='object'){
-        Object.keys(d).forEach(function(u){
-          try{localStorage.setItem('cmi_pw_'+u, d[u]);}catch(e){}
-        });
+  if(!PW_SHEET_GID){if(cb)cb();return;}
+  fetch(getPwSheetUrl())
+    .then(function(r){return r.text();})
+    .then(function(csv){
+      var rows=parseCSV(csv);
+      // rows[0] = header: username,password,updated_at
+      for(var i=1;i<rows.length;i++){
+        var u=rows[i][0]&&rows[i][0].trim();
+        var p=rows[i][1]&&rows[i][1].trim();
+        if(u&&p){
+          try{localStorage.setItem('cmi_pw_'+u,p);}catch(e){}
+        }
       }
       if(cb)cb();
-    }
-  );
+    })
+    .catch(function(){if(cb)cb();});
+}
+
+// Write password to GAS (GET request — works within Google ecosystem)
+function pushPasswordToGAS(username, newPass, onDone, onFail){
+  if(!GAS_PW_URL){if(onFail)onFail();return;}
+  var url=GAS_PW_URL
+    +'?action=setPassword'
+    +'&username='+encodeURIComponent(username)
+    +'&password='+encodeURIComponent(newPass)
+    +'&t='+Date.now();
+  // Try fetch first
+  fetch(url)
+    .then(function(r){return r.text();})
+    .then(function(txt){
+      // extract JSON from possible HTML wrapper
+      var match=txt.match(/\{[\s\S]*?\}/);
+      var d=match?JSON.parse(match[0]):null;
+      if(d&&d.ok){if(onDone)onDone();}
+      else{if(onFail)onFail(d&&d.error);}
+    })
+    .catch(function(){if(onFail)onFail('fetch blocked');});
 }
 
 function doLogin(){
@@ -1451,20 +1478,17 @@ function showChangePw(){
     msg.textContent='✓ Saving…';
     msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--am)';
     if(GAS_PW_URL){
-      gasFetch(
-        GAS_PW_URL+'?action=setPassword'
-          +'&username='+encodeURIComponent(U.username)
-          +'&password='+encodeURIComponent(nw)
-          +'&t='+Date.now(),
-        function(err, d){
-          if(!err && d && d.ok){
-            msg.textContent='✓ Password changed & synced across all devices.';
-            msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--gn)';
-          } else {
-            msg.textContent='✓ Saved locally. Sync failed: '+(d&&d.error?d.error:'check GAS');
-            msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--am)';
-          }
+      pushPasswordToGAS(
+        U.username, nw,
+        function(){ // success
+          msg.textContent='✓ Password changed & synced across all devices.';
+          msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--gn)';
           setTimeout(function(){wrap.innerHTML='';},2500);
+        },
+        function(errDetail){ // fail — already saved locally, tell user
+          msg.textContent='✓ Saved on this device. To sync: open the app once while logged into Google.';
+          msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--am)';
+          setTimeout(function(){wrap.innerHTML='';},4000);
         }
       );
     } else {
