@@ -1439,22 +1439,23 @@ function showChangePw(){
     try{ localStorage.setItem('cmi_pw_'+U.username, nw); }catch(e){}
     msg.textContent='✓ Saving…';
     msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--am)';
-    // Push to GAS for cross-device sync
-    // NOTE: must use no-cors + form-encoded because GAS blocks JSON POST from external origins
+    // Push to GAS via GET — avoids CORS preflight entirely
     if(GAS_PW_URL){
-      var params='action=setPassword'
+      var syncUrl=GAS_PW_URL
+        +'?action=setPassword'
         +'&username='+encodeURIComponent(U.username)
-        +'&password='+encodeURIComponent(nw);
-      fetch(GAS_PW_URL,{
-        method:'POST',
-        mode:'no-cors',
-        headers:{'Content-Type':'application/x-www-form-urlencoded'},
-        body:params
-      })
-      .then(function(){
-        // no-cors always resolves (even on error) so we assume success here
-        msg.textContent='✓ Password changed & synced across all devices.';
-        msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--gn)';
+        +'&password='+encodeURIComponent(nw)
+        +'&t='+Date.now();
+      fetch(syncUrl)
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d&&d.ok){
+          msg.textContent='✓ Password changed & synced across all devices.';
+          msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--gn)';
+        } else {
+          msg.textContent='✓ Saved locally. Sync failed: '+(d&&d.error?d.error:'unknown error');
+          msg.style.cssText='font-size:11px;text-align:center;display:block;color:var(--am)';
+        }
         setTimeout(function(){wrap.innerHTML='';},2500);
       })
       .catch(function(){
