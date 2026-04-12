@@ -1495,8 +1495,15 @@ function buildAdminPanel(){
 // EVENT DELEGATION — zero inline handlers
 // ═══════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded',function(){
-  // Pre-load passwords from GAS (so login on any device uses latest password)
-  syncPasswordsFromGAS(function(){});
+  // Pre-load passwords from GAS before enabling login
+  // Disable login button while syncing so user always gets latest password
+  var loginBtn=el('btn-login');
+  loginBtn.disabled=true;
+  loginBtn.textContent='Syncing…';
+  syncPasswordsFromGAS(function(){
+    loginBtn.disabled=false;
+    loginBtn.textContent='Sign in';
+  });
   el('btn-login').addEventListener('click',doLogin);
   el('btn-logout').addEventListener('click',doLogout);
   el('l-p').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
