@@ -389,9 +389,11 @@ var DEPTS = [
        {key:'Target_USD',        label:'Target',        color:'#86EFAC', type:'bar'},
        {key:'Orders_Booked_USD', label:'Orders Booked', color:'#1D9E75', type:'bar'},
      ]},
-     {title:'Conversion % & Dealer Score', unit:'', datasets:[
-       {key:'Conversion_pct',    label:'Conversion %',  color:'#34D399', type:'line'},
-       {key:'Dealer_Perf_Score', label:'Dealer Score',  color:'#059669', type:'line'},
+     {title:'Conversion %', unit:'%', datasets:[
+       {key:'Conversion_pct', label:'Conversion %', color:'#34D399', type:'line'},
+     ]},
+     {title:'Dealer Performance Score', unit:'pts', datasets:[
+       {key:'Dealer_Perf_Score', label:'Dealer Score', color:'#059669', type:'line'},
      ]},
      {title:'Pipeline 3-Month', unit:'USD', datasets:[
        {key:'Pipeline_3mo_USD', label:'Pipeline', color:'#6EE7B7', type:'line'},
