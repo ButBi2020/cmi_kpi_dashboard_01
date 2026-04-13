@@ -923,11 +923,11 @@ function renderOverlayChart(col, cid, oc, range, did){
   var datasets=oc.datasets.map(function(ds){
     var vals=range.dkeys.map(function(dk){return getGSVal(did,dk.y,dk.m,ds.key);});
     var base={label:ds.label,data:vals,borderColor:ds.color,
-      backgroundColor:ds.color+(ds.type==='bar'?'bb':'18'),
+      backgroundColor:ds.color+(ds.type==='bar'?'dd':'40'),
       tension:.3,fill:ds.type!=='bar',
-      pointRadius:many?2:4,
+      pointRadius:many?2:4,borderWidth:ds.type==='bar'?1:2,
       pointBackgroundColor:ds.color,spanGaps:true,yAxisID:'y'};
-    if(ds.type==='bar'){base.type='bar';base.borderRadius=3;base.borderWidth=1;}
+    if(ds.type==='bar'){base.type='bar';base.borderRadius=3;}
     return base;
   });
   if(isTwoBar){
@@ -1124,7 +1124,34 @@ function toggleAcc(id){
 }
 function bodViewDept(id){ accOpen=id; buildbodLeft(); renderbodRight(id); }
 
-// ═══════════════════════════════════════════════
+// ── Status helper ─────────────────────────────────────────────────
+// Submitted  = row exists AND all KPI fields filled
+// Pending    = row exists BUT some KPI fields missing
+// Not updated = no row at all
+function getDeptStatus(dept, year, month_0idx){
+  var r = getGSRow(dept.id, year, month_0idx);
+  if(!r) return 'none';
+  var filled = dept.kpis.filter(function(k){
+    return getGSVal(dept.id, year, month_0idx, k.k) != null;
+  }).length;
+  if(filled === dept.kpis.length) return 'full';
+  return 'partial';
+}
+
+// Last submitted_at = latest across ALL rows for this dept this month
+function getLastSubmittedAt(dept, year, month_0idx){
+  var latest = null;
+  for(var i=0;i<GS_DATA.length;i++){
+    var r=GS_DATA[i];
+    if(r[0]===dept.id&&(parseInt(r[1])-1)===month_0idx&&parseInt(r[2])===year){
+      var idx=GS_HDR.indexOf('submitted_at');
+      if(idx>=0&&r[idx]) latest=r[idx];
+    }
+  }
+  return latest||'—';
+}
+
+// ─────────────────────────────────────────────────────────────────
 // bod VIEW — RIGHT PANEL
 // ═══════════════════════════════════════════════
 function renderbodRight(id){
@@ -1136,17 +1163,21 @@ function renderbodRight(id){
     // FIX #6: hide back button on overview
     if(backBtn) backBtn.classList.add('hidden');
     el('rp-title').textContent='All Departments';
-    var subm=DEPTS.filter(function(d){return !!getGSRow(d.id,NY,NM);}).length;
-    el('rp-sub').textContent=MN[NM]+' '+NY+' · '+subm+'/'+DEPTS.length+' submitted';
+    var subm=DEPTS.filter(function(d){return getDeptStatus(d,NY,NM)==='full';}).length;
+    var pend=DEPTS.filter(function(d){return getDeptStatus(d,NY,NM)==='partial';}).length;
+    el('rp-sub').textContent=MN[NM]+' '+NY+' · '+subm+' submitted · '+pend+' pending';
     var tRows=DEPTS.map(function(d){
-      var r=getGSRow(d.id,NY,NM);var sub=!!r;
-      var ts=sub?getGSVal(d.id,NY,NM,'submitted_at')||'—':'—';
+      var st=getDeptStatus(d,NY,NM);
+      var ts=getLastSubmittedAt(d,NY,NM);
+      var badgeCls=st==='full'?'bg':st==='partial'?'ba':'';
+      var badgeTxt=st==='full'?'Submitted':st==='partial'?'Pending':'Not updated';
+      var badgeStyle=st==='none'?'background:var(--sf2);color:var(--hi);border:1px solid var(--bd)':'';
       return '<tr>'
         +'<td><span style="display:inline-flex;align-items:center;gap:6px">'
         +'<span style="width:7px;height:7px;border-radius:50%;background:'+d.color+';display:inline-block"></span>'
         +d.name+'</span></td>'
         +'<td style="color:var(--mu)">'+d.mgr+'</td>'
-        +'<td><span class="badge '+(sub?'bg':'ba')+'">'+(sub?'Submitted':'Pending')+'</span></td>'
+        +'<td><span class="badge '+badgeCls+'" style="'+badgeStyle+'">'+badgeTxt+'</span></td>'
         +'<td style="color:var(--mu);font-size:11px">'+ts+'</td>'
         +'<td><button class="vc-btn" style="width:auto;padding:4px 10px;margin:0" data-dept="'+d.id+'">Charts →</button></td>'
         +'</tr>';
@@ -1161,7 +1192,7 @@ function renderbodRight(id){
     }).join('');
     body.innerHTML='<div class="stbl-w">'
       +'<div class="stbl-h">Submission status — '+MN[NM]+' '+NY
-      +'<span style="font-size:11px;font-weight:400;color:var(--mu)">'+subm+'/'+DEPTS.length+'</span></div>'
+      +'<span style="font-size:11px;font-weight:400;color:var(--mu)">'+subm+'/'+DEPTS.length+' submitted</span></div>'
       +'<table><thead><tr><th>Department</th><th>Manager</th><th>Status</th><th>Submitted at</th><th></th></tr></thead>'
       +'<tbody>'+tRows+'</tbody></table></div>'
       +'<div class="charts-col">'+ovCharts+'</div>';
@@ -1273,8 +1304,11 @@ function mkLine(id,labels,label,data,color,unit){
   return new Chart(document.getElementById(id),{
     type:'line',
     data:{labels:labels,datasets:[{label:label,data:data,
-      borderColor:color,backgroundColor:color+'14',tension:.3,fill:true,
-      pointRadius:many?2:4,pointBackgroundColor:color,spanGaps:true}]},
+      borderColor:color,backgroundColor:color+'40',tension:.3,fill:true,
+      borderWidth:2,
+      pointRadius:many?2:4,pointBackgroundColor:color,
+      pointBorderColor:color,pointBorderWidth:2,
+      spanGaps:true}]},
     options:opts,plugins:[ChartDataLabels]
   });
 }
