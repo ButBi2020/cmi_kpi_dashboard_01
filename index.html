@@ -248,13 +248,13 @@ tbody tr:hover td{background:var(--sf2)}
 .hist-meta{font-size:10px;color:var(--hi);margin-bottom:2px}
 .hist-text{font-size:12px;line-height:1.5}
 
-.cc-split{display:grid;grid-template-columns:1fr 150px;gap:12px;align-items:start}
+.cc-split{display:grid;grid-template-columns:1fr 120px;gap:12px;align-items:start}
 .cc-monthly{flex:1}
 .cc-total{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);
-  padding:14px 16px}
-.cc-total-title{font-size:12px;font-weight:700;color:var(--tx);margin-bottom:2px}
-.cc-total-sub{font-size:10px;color:var(--mu);margin-bottom:10px}
-.cc-total-w{position:relative;height:200px}
+  padding:10px 10px}
+.cc-total-title{font-size:11px;font-weight:700;color:var(--tx);margin-bottom:1px}
+.cc-total-sub{font-size:10px;color:var(--mu);margin-bottom:6px}
+.cc-total-w{position:relative;height:160px}
 </style>
 </head>
 <body>
@@ -968,11 +968,12 @@ function renderOverlayChart(col, cid, oc, range, did){
     var totColor0=oc.datasets[0].color, totColor1=oc.datasets[1].color;
     var totOpts={
       responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:18}},
       plugins:{
         legend:{display:false},
         datalabels:{
           display:true,color:'#333',anchor:'end',align:'top',
-          font:{size:10,weight:'700'},
+          font:{size:9,weight:'700'},
           formatter:function(v){
             if(v==null)return null;
             if(oc.unit==='USD')return v>=1e6?(Math.round(v/1e5)/10)+'M':v>=1000?Math.round(v/1000)+'k':'';
@@ -982,7 +983,7 @@ function renderOverlayChart(col, cid, oc, range, did){
       },
       scales:{
         y:{display:false,beginAtZero:true},
-        x:{grid:{display:false},ticks:{font:{size:10}}}
+        x:{grid:{display:false},ticks:{font:{size:9}}}
       }
     };
     CH[cid+'-tot']=new Chart(document.getElementById(cid+'-tot'),{
