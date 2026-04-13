@@ -828,12 +828,29 @@ function saveDept(){
     setTimeout(function(){ok.style.display='none';},3000);
     return;
   }
-  fetch(SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action:'saveKPI',data:payload})})
-    .then(function(r){return r.json();})
-    .then(function(){
+  // Build GET params from payload — avoids CORS POST block
+  var params='action=saveKPI';
+  Object.keys(payload).forEach(function(k){
+    params+='&'+encodeURIComponent(k)+'='+encodeURIComponent(payload[k]!=null?payload[k]:'');
+  });
+  fetch(SCRIPT_URL+'?'+params)
+    .then(function(r){return r.text();})
+    .then(function(txt){
       sp.style.display='none'; lb.textContent='Save KPIs';
-      fetchSheetData(function(){buildDeptLeft();renderDeptRight();});
+      // Update local data immediately so chart refreshes
+      var newRow=GS_HDR.map(function(h){
+        if(h==='dept')return deptId;
+        if(h==='month')return String(selM+1);
+        if(h==='year')return String(selY);
+        if(h==='submitted_at')return new Date().toLocaleString();
+        if(h==='submitted_by')return U.username;
+        return payload[h]!=null?String(payload[h]):'';
+      });
+      GS_DATA.push(newRow);
+      delete UNLOCKED[deptId+'_'+selY+'_'+selM];
+      ok.style.display='block';
+      var badge=el('st-badge');if(badge){badge.textContent='Submitted';badge.className='badge bg';}
+      buildDeptLeft(); renderDeptRight();
       setTimeout(function(){ok.style.display='none';},3000);
     })
     .catch(function(){
