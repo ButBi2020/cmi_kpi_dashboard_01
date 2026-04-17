@@ -189,15 +189,8 @@ button{cursor:pointer}
 #btn-bod-back{padding:6px 14px;border-radius:var(--r);border:1px solid var(--bd2);
   background:var(--sf);color:var(--mu);font-size:12px;white-space:nowrap;margin-top:2px}
 #btn-bod-back:hover{background:var(--sf2);color:var(--tx)}
-/* 2-column chart grid */
-.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.cc-span2{grid-column:1/-1} /* twoBar split cards span full width */
-.cc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:16px 18px;
-  cursor:pointer;transition:border-color .15s,box-shadow .15s;position:relative}
-.cc:hover{border-color:var(--bl);box-shadow:0 2px 12px rgba(18,85,160,.1)}
-.cc-hint{position:absolute;top:10px;right:10px;font-size:10px;color:var(--bl);
-  opacity:0;transition:opacity .15s;background:var(--bl-bg);padding:2px 7px;border-radius:8px;pointer-events:none}
-.cc:hover .cc-hint{opacity:1}
+.charts-col{display:flex;flex-direction:column;gap:14px}
+.cc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:16px 18px}
 .cc-t{font-size:13px;font-weight:700;margin-bottom:2px}
 .cc-s{font-size:11px;color:var(--mu);margin-bottom:12px}
 .cc-w{position:relative;height:185px}
@@ -257,52 +250,40 @@ tbody tr:hover td{background:var(--sf2)}
 
 .cc-split{display:grid;grid-template-columns:1fr 120px;gap:12px;align-items:start}
 .cc-monthly{flex:1}
-.cc-total{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);
-  padding:10px 10px}
+.cc-total{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:10px}
 .cc-total-title{font-size:11px;font-weight:700;color:var(--tx);margin-bottom:1px}
 .cc-total-sub{font-size:10px;color:var(--mu);margin-bottom:6px}
 .cc-total-w{position:relative;height:160px}
 
-/* ── PURPOSE BAR in dept form ── */
-.dept-purpose-bar{font-size:11px;color:var(--mu);font-style:italic;background:var(--sf2);
-  border-left:3px solid var(--bl);padding:5px 9px;border-radius:0 var(--r) var(--r) 0;
-  margin-bottom:10px;line-height:1.4}
+/* CHART GRID 2-column */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.charts-grid .cc{cursor:pointer;transition:box-shadow .15s,border-color .15s}
+.charts-grid .cc:hover{box-shadow:0 4px 18px rgba(0,0,0,.13);border-color:var(--bl-lt)}
+.cc-clickhint{font-size:9px;color:var(--hi);margin-top:3px;font-style:italic}
 
-/* ── ABBR badge in topbar + sidebar ── */
-.dept-abbr-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;
-  background:var(--bl-bg);color:var(--bl);margin-left:6px;vertical-align:middle}
+/* DRILL-DOWN MODAL */
+.drill-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400;
+  display:flex;align-items:center;justify-content:center;padding:16px}
+.drill-box{background:var(--sf);border-radius:var(--rl);width:min(900px,98vw);
+  max-height:92vh;display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 24px 64px rgba(0,0,0,.28)}
+.drill-hd{padding:13px 18px;border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.drill-hd-t{font-weight:700;font-size:15px}
+.drill-hd-r{display:flex;gap:8px;align-items:center}
+.drill-exp{padding:5px 13px;border-radius:var(--r);border:1px solid var(--bd2);
+  background:var(--sf);color:var(--mu);font-size:11px;cursor:pointer}
+.drill-exp:hover{background:var(--bl);color:#fff;border-color:var(--bl)}
+.drill-cls{border:none;background:none;font-size:22px;color:var(--mu);cursor:pointer;
+  padding:0 4px;line-height:1}
+.drill-cls:hover{color:var(--tx)}
+.drill-bd{flex:1;overflow-y:auto;padding:20px 22px}
+.drill-cw{position:relative;height:380px}
 
-/* ── DRILL-DOWN MODAL ── */
-.drill-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;
-  display:flex;align-items:center;justify-content:center;padding:20px}
-.drill-modal{background:var(--sf);border-radius:var(--rl);width:100%;max-width:900px;
-  max-height:90vh;display:flex;flex-direction:column;overflow:hidden;
-  box-shadow:0 24px 64px rgba(0,0,0,.35)}
-.drill-hdr{padding:16px 20px;border-bottom:1px solid var(--bd);
-  display:flex;align-items:flex-start;justify-content:space-between}
-.drill-hdr-info{flex:1}
-.drill-hdr-title{font-size:16px;font-weight:700;margin-bottom:2px}
-.drill-hdr-sub{font-size:11px;color:var(--mu)}
-.drill-close{border:none;background:none;font-size:22px;color:var(--mu);
-  cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0}
-.drill-close:hover{color:var(--tx)}
-.drill-body{flex:1;overflow-y:auto;padding:20px}
-.drill-legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
-.dl-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--mu)}
-.dl-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
-.drill-cw{position:relative;height:340px;margin-bottom:14px}
-/* drill split for twoBar */
-.drill-split{display:grid;grid-template-columns:1fr 200px;gap:16px}
-.drill-total-card{background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rl);
-  padding:14px 16px;display:flex;flex-direction:column}
-.dt-title{font-size:13px;font-weight:700;margin-bottom:2px}
-.dt-sub{font-size:10px;color:var(--mu);margin-bottom:10px}
-.dt-cw{position:relative;flex:1;min-height:180px}
-.dt-ratio{text-align:center;font-size:12px;font-weight:700;color:#6366F1;margin-top:8px}
-
-/* ── MSG Google Sheet sync indicator ── */
-.msg-sync-info{font-size:10px;color:var(--hi);text-align:center;padding:4px 14px;
-  border-bottom:1px solid var(--bd)}
+/* PURPOSE line under dept name in left panel */
+.dept-purpose{font-size:10px;color:var(--hi);margin-bottom:10px;
+  font-style:italic;line-height:1.4;padding:5px 8px;background:var(--sf2);
+  border-radius:var(--r);border-left:3px solid var(--bd2)}
 </style>
 </head>
 <body>
@@ -319,7 +300,7 @@ tbody tr:hover td{background:var(--sf2)}
     <div id="l-err"></div>
     <button id="btn-login">Sign in</button>
     <div class="lhint">
-      <b>Accounts:</b> bod · production · sales · qa · finance · supply · hr · cs · design · it · marketing · project_dev · property · tl_handover · cid<br>
+      <b>Accounts:</b> bod · production · qa · design · project_dev · sc · cid · tl_handover · sales · marketing · cs · finance · hr · hse<br>
       Password: <b>[username]123</b> &nbsp;·&nbsp; e.g. bod123, hr123
     </div>
   </div>
@@ -359,13 +340,28 @@ tbody tr:hover td{background:var(--sf2)}
       <div class="msg-hdr-title" id="msg-panel-title">Messages</div>
       <button class="msg-close-btn" id="msg-panel-close-btn">&#x2715;</button>
     </div>
-    <div id="msg-sync-note" style="display:none;font-size:10px;color:var(--am);text-align:center;padding:4px 14px;border-bottom:1px solid var(--bd)"></div>
     <div class="msg-thread" id="msg-thread"></div>
     <div class="msg-compose">
       <textarea class="msg-txt-input" id="msg-txt-input" rows="2" placeholder="Type a message…"></textarea>
       <button class="msg-send-btn2" id="msg-send-btn">Send</button>
     </div>
   </div>
+  <!-- DRILL-DOWN MODAL -->
+  <div id="drill-ov" class="drill-ov" style="display:none">
+    <div class="drill-box">
+      <div class="drill-hd">
+        <div class="drill-hd-t" id="drill-title">Chart Detail</div>
+        <div class="drill-hd-r">
+          <button class="drill-exp" id="drill-exp-btn">⬇ Export PNG</button>
+          <button class="drill-cls" id="drill-cls-btn">✕</button>
+        </div>
+      </div>
+      <div class="drill-bd">
+        <div class="drill-cw"><canvas id="drill-canvas"></canvas></div>
+      </div>
+    </div>
+  </div>
+
   <div id="modal-overlay" style="display:none" class="modal-overlay">
     <div class="modal-box">
       <div class="modal-head">
@@ -399,87 +395,87 @@ var NM  = new Date().getMonth(); // 0-indexed: Jan=0 … Dec=11
 var YRS = [2024, 2025, 2026, 2027];
 
 // ═══════════════════════════════════════════════
-// DEPT DEFINITIONS
+// DEPT DEFINITIONS  — V13
 // ═══════════════════════════════════════════════
 var DEPTS = [
-  // ── 1. PRODUCTION ────────────────────────────
-  {id:'PROD', abbr:'PROD', name:'Production',         color:'#378ADD', ini:'RK', mgr:'Rudy Knoesen',
+  {id:'PROD', name:'Production', abbr:'PROD', color:'#378ADD', ini:'RK', mgr:'Rudy Knoesen',
    purpose:'Deliver boats on time with controlled labour.',
    kpis:[
-     {k:'Schedule_Adh_pct',   l:'Schedule Adherence',       u:'%',   t:'p'},
-     {k:'Labour_vs_Plan_pct', l:'Labour Hours vs Plan',      u:'%',   t:'p'},
-     {k:'Rework_Hours_pct',   l:'Rework Hours',              u:'%',   t:'p'},
-     {k:'Work_Order_Changes', l:'Work Order Changes',        u:'No.', t:'i'},
-     {k:'Boats_Completed',    l:'Boats Completed',           u:'No.', t:'i'},
+     {k:'Schedule_Adherence_pct',   l:'Schedule Adherence',    u:'%',   t:'p'},
+     {k:'Labour_Hours_vs_Plan_pct', l:'Labour Hours vs Plan',  u:'%',   t:'p'},
+     {k:'Rework_Hours_pct',         l:'Rework Hours',          u:'%',   t:'p'},
+     {k:'Work_Order_Changes',       l:'Work Order Changes',    u:'No.', t:'i'},
+     {k:'Boats_Completed',          l:'Boats Completed',       u:'No.', t:'i'},
    ],
    overlayCharts:[
-     {title:'Schedule Adherence & Labour vs Plan', unit:'%', datasets:[
-       {key:'Schedule_Adh_pct',   label:'Schedule Adh.',    color:'#93C5FD', type:'line'},
-       {key:'Labour_vs_Plan_pct', label:'Labour vs Plan',   color:'#1D4ED8', type:'line'},
-     ]},
-     {title:'Boats Completed',     unit:'No.', datasets:[{key:'Boats_Completed',    label:'Boats Completed',    color:'#3B82F6', type:'bar'}]},
-     {title:'Work Order Changes',  unit:'No.', datasets:[{key:'Work_Order_Changes', label:'WO Changes',         color:'#EF4444', type:'line'}]},
-     {title:'Rework Hours %',      unit:'%',   datasets:[{key:'Rework_Hours_pct',   label:'Rework Hours %',     color:'#F59E0B', type:'line'}]},
+     {title:'Schedule Adherence %',           unit:'%',    datasets:[{key:'Schedule_Adherence_pct',   label:'Schedule Adherence %', color:'#378ADD',type:'line'}]},
+     {title:'Labour Hours vs Plan %',          unit:'%',    datasets:[{key:'Labour_Hours_vs_Plan_pct', label:'Labour vs Plan %',     color:'#60A5FA',type:'line'}]},
+     {title:'Rework Hours %',                  unit:'%',    datasets:[{key:'Rework_Hours_pct',         label:'Rework %',             color:'#F87171',type:'line'}]},
+     {title:'Work Order Changes',              unit:'No.',  datasets:[{key:'Work_Order_Changes',       label:'WO Changes',           color:'#FB923C',type:'bar'}]},
+     {title:'Boats Completed',                 unit:'No.',  datasets:[{key:'Boats_Completed',          label:'Boats',                color:'#1D4ED8',type:'bar'}]},
    ]},
 
-  // ── 2. QUALITY ASSURANCE ──────────────────────
-  {id:'QA', abbr:'QA', name:'Quality Assurance',  color:'#D4537E', ini:'DA', mgr:'Mr Duy Anh',
+  {id:'QA', name:'Quality Assurance', abbr:'QA', color:'#D4537E', ini:'DA', mgr:'Mr Duy Anh',
    purpose:'Ensure first-time quality.',
    kpis:[
-     {k:'FirstTimePass_pct', l:'First Time Pass',      u:'%',    t:'p'},
-     {k:'QA_Defects_Logged', l:'QA Defects Logged',    u:'No.',  t:'i'},
-     {k:'Defects_A',         l:'Defects Severity A',   u:'No.',  t:'i'},
-     {k:'Defects_B',         l:'Defects Severity B',   u:'No.',  t:'i'},
-     {k:'Defects_C',         l:'Defects Severity C',   u:'No.',  t:'i'},
-     {k:'Avg_Closeout_Days', l:'Avg Close-out Time',   u:'Days', t:'p'},
+     {k:'First_Time_Pass_pct',  l:'First Time Pass',    u:'%',   t:'p'},
+     {k:'QA_Defects_Logged',    l:'QA Defects Logged',  u:'No.', t:'i'},
+     {k:'Defects_Severity_A',   l:'Defects Severity A', u:'No.', t:'i'},
+     {k:'Defects_Severity_B',   l:'Defects Severity B', u:'No.', t:'i'},
+     {k:'Defects_Severity_C',   l:'Defects Severity C', u:'No.', t:'i'},
+     {k:'Avg_Closeout_Days_QA', l:'Avg Close-out Time', u:'Days',t:'p'},
    ],
    overlayCharts:[
-     {title:'First Time Pass %',           unit:'%',    datasets:[{key:'FirstTimePass_pct', label:'FTP %',          color:'#D4537E', type:'line'}]},
-     {title:'Defects by Severity (A/B/C)', unit:'No.',  datasets:[
-       {key:'Defects_A', label:'Severity A', color:'#EF4444', type:'bar'},
-       {key:'Defects_B', label:'Severity B', color:'#F97316', type:'bar'},
-       {key:'Defects_C', label:'Severity C', color:'#FCD34D', type:'bar'},
+     {title:'First Time Pass %',         unit:'%',   datasets:[{key:'First_Time_Pass_pct', label:'FTP %',          color:'#D4537E',type:'line'}]},
+     {title:'QA Defects Logged',         unit:'No.', datasets:[{key:'QA_Defects_Logged',   label:'Defects Logged', color:'#F43F5E',type:'bar'}]},
+     {title:'Defects by Severity A/B/C', unit:'No.', datasets:[
+       {key:'Defects_Severity_A', label:'Severity A', color:'#DC2626', type:'bar'},
+       {key:'Defects_Severity_B', label:'Severity B', color:'#F97316', type:'bar'},
+       {key:'Defects_Severity_C', label:'Severity C', color:'#FBBF24', type:'bar'},
      ]},
-     {title:'QA Defects Logged',   unit:'No.',  datasets:[{key:'QA_Defects_Logged', label:'Defects Logged',  color:'#F43F5E', type:'line'}]},
-     {title:'Avg Close-out Time',  unit:'Days', datasets:[{key:'Avg_Closeout_Days', label:'Close-out Days',  color:'#BE185D', type:'line'}]},
+     {title:'Avg Close-out Time',        unit:'Days',datasets:[{key:'Avg_Closeout_Days_QA', label:'Avg Days', color:'#BE185D',type:'line'}]},
    ]},
 
-  // ── 3. DESIGN & TECHNICAL ─────────────────────
-  {id:'DT', abbr:'D&T', name:'Design & Technical', color:'#8B5CF6', ini:'JM', mgr:'James',
+  {id:'DESIGN', name:'Design & Technical', abbr:'D&T', color:'#8B5CF6', ini:'JA', mgr:'James',
    purpose:'Stable design and BOM.',
    kpis:[
-     {k:'BOM_Errors',          l:'BOM Errors Identified', u:'No.', t:'i'},
-     {k:'Production_RFIs',     l:'Production RFIs',       u:'No.', t:'i'},
-     {k:'Late_Design_Changes', l:'Late Design Changes',   u:'No.', t:'i'},
-   ]},
-
-  // ── 4. PROJECT DEVELOPMENT ───────────────────
-  {id:'PD', abbr:'PD', name:'Project Development', color:'#14B8A6', ini:'PL', mgr:'Project Lead',
-   purpose:'Controlled implementation of change.',
-   kpis:[
-     {k:'Active_Projects',         l:'Active Projects',         u:'No.', t:'i'},
-     {k:'Projects_OnTrack_pct',    l:'Projects On-Track',       u:'%',   t:'p'},
-     {k:'Design_Changes_Released', l:'Design Changes Released', u:'No.', t:'i'},
+     {k:'BOM_Errors_Identified',  l:'BOM Errors Identified', u:'No.', t:'i'},
+     {k:'Production_RFIs',        l:'Production RFIs',       u:'No.', t:'i'},
+     {k:'Late_Design_Changes',    l:'Late Design Changes',   u:'No.', t:'i'},
    ],
    overlayCharts:[
-     {title:'Active Projects & On-Track %', unit:'', datasets:[
-       {key:'Active_Projects',      label:'Active Projects', color:'#5EEAD4', type:'bar'},
-       {key:'Projects_OnTrack_pct', label:'On-Track %',      color:'#0D9488', type:'line'},
-     ]},
-     {title:'Design Changes Released', unit:'No.', datasets:[{key:'Design_Changes_Released', label:'Changes Released', color:'#14B8A6', type:'line'}]},
+     {title:'BOM Errors Identified',              unit:'No.', datasets:[{key:'BOM_Errors_Identified', label:'BOM Errors',    color:'#8B5CF6',type:'bar'}]},
+     {title:'Production RFIs',                    unit:'No.', datasets:[{key:'Production_RFIs',       label:'RFIs',          color:'#A78BFA',type:'bar'}]},
+     {title:'Late Design Changes',                unit:'No.', datasets:[{key:'Late_Design_Changes',   label:'Late Changes',  color:'#6D28D9',type:'bar'}]},
    ]},
 
-  // ── 5. SUPPLY CHAIN ──────────────────────────
-  {id:'SCM', abbr:'SCM', name:'Supply Chain',      color:'#D85A30', ini:'ML', mgr:'Mr Loc',
+  {id:'PD', name:'Project Development', abbr:'PD', color:'#14B8A6', ini:'PL', mgr:'Project Lead',
+   purpose:'Controlled implementation of change.',
+   kpis:[
+     {k:'Active_Projects',         l:'Active Projects',        u:'No.', t:'i'},
+     {k:'Projects_OnTrack_pct',    l:'Projects On-Track',      u:'%',   t:'p'},
+     {k:'Design_Changes_Released', l:'Design Changes Released',u:'No.', t:'i'},
+   ],
+   overlayCharts:[
+     {title:'Active Projects',         unit:'No.', datasets:[{key:'Active_Projects',         label:'Active Projects',  color:'#14B8A6',type:'bar'}]},
+     {title:'Projects On-Track %',     unit:'%',   datasets:[{key:'Projects_OnTrack_pct',    label:'On-Track %',       color:'#0D9488',type:'line'}]},
+     {title:'Design Changes Released', unit:'No.', datasets:[{key:'Design_Changes_Released', label:'Changes Released', color:'#5EEAD4',type:'bar'}]},
+   ]},
+
+  {id:'SC', name:'Supply Chain', abbr:'SCM', color:'#D85A30', ini:'ML', mgr:'Mr Loc',
    purpose:'Material availability to production.',
    kpis:[
-     {k:'OTIF_pct',              l:'OTIF to Production',           u:'%',   t:'p'},
-     {k:'Material_Shortages',    l:'Material Shortages',           u:'No.', t:'i'},
-     {k:'Expedited_Freight_USD', l:'Expedited Freight Cost',       u:'USD', t:'c'},
+     {k:'OTIF_to_Production_pct',     l:'OTIF to Production',               u:'%',  t:'p'},
+     {k:'Material_Shortages',         l:'Material Shortages Impact Prod.',   u:'No.',t:'i'},
+     {k:'Expedited_Freight_Cost_USD', l:'Expedited Freight Cost',            u:'USD',t:'c'},
+   ],
+   overlayCharts:[
+     {title:'OTIF to Production %',                   unit:'%',   datasets:[{key:'OTIF_to_Production_pct',     label:'OTIF %',        color:'#D85A30',type:'line'}]},
+     {title:'Material Shortages Impacting Production', unit:'No.', datasets:[{key:'Material_Shortages',         label:'Shortages',     color:'#F97316',type:'bar'}]},
+     {title:'Expedited Freight Cost',                  unit:'USD', datasets:[{key:'Expedited_Freight_Cost_USD', label:'Freight Cost',  color:'#EA580C',type:'bar'}]},
    ]},
 
-  // ── 6. CID ────────────────────────────────────
-  {id:'CID', abbr:'CID', name:'CID',               color:'#6366F1', ini:'CI', mgr:'CID Lead',
+  {id:'CID', name:'CID', abbr:'CID', color:'#6366F1', ini:'CL', mgr:'CID Lead',
    purpose:'Drive measurable improvement.',
    kpis:[
      {k:'CID_Actions_Open',      l:'CID Actions Open',    u:'No.',  t:'i'},
@@ -487,142 +483,146 @@ var DEPTS = [
      {k:'CID_Avg_Closeout_Days', l:'Avg Close-out Time',  u:'Days', t:'p'},
    ],
    overlayCharts:[
-     {title:'CID Actions: Open vs Closed', unit:'No.', datasets:[
+     {title:'CID Actions Open vs Closed', unit:'No.', datasets:[
        {key:'CID_Actions_Open',   label:'Open',   color:'#A5B4FC', type:'bar'},
        {key:'CID_Actions_Closed', label:'Closed', color:'#6366F1', type:'bar'},
      ]},
-     {title:'Avg Close-out Time', unit:'Days', datasets:[{key:'CID_Avg_Closeout_Days', label:'Days', color:'#818CF8', type:'line'}]},
+     {title:'Avg Close-out Time', unit:'Days', datasets:[{key:'CID_Avg_Closeout_Days', label:'Avg Days', color:'#4F46E5',type:'line'}]},
    ]},
 
-  // ── 7. THAILAND HANDOVER ──────────────────────
-  {id:'TH', abbr:'TH', name:'Thailand Handover',  color:'#F97316', ini:'PH', mgr:'Phil Harper',
+  {id:'TL', name:'Thailand Handover', abbr:'TH', color:'#F97316', ini:'PH', mgr:'Phil Harper',
    purpose:'Clean delivery and handover.',
    kpis:[
-     {k:'Handovers_Completed', l:'Handovers Completed',            u:'No.', t:'i'},
-     {k:'Delivery_OnTime_pct', l:'Delivery to Planned Date',       u:'%',   t:'p'},
-     {k:'Defects_at_Handover', l:'Defects at Handover',            u:'No.', t:'i'},
-     {k:'Outstanding_Issues',  l:'Outstanding Issues at Delivery', u:'No.', t:'i'},
+     {k:'Handovers_Completed',        l:'Handovers Completed',          u:'No.',t:'i'},
+     {k:'Delivery_to_Planned_pct',    l:'Delivery to Planned Date',     u:'%',  t:'p'},
+     {k:'Defects_at_Handover',        l:'Defects at Handover',          u:'No.',t:'i'},
+     {k:'Outstanding_Issues_Delivery',l:'Outstanding Issues at Delivery',u:'No.',t:'i'},
    ],
    overlayCharts:[
-     {title:'Handovers & On-Time %', unit:'', datasets:[
-       {key:'Handovers_Completed', label:'Handovers', color:'#FDBA74', type:'bar'},
-       {key:'Delivery_OnTime_pct', label:'On-Time %', color:'#F97316', type:'line'},
-     ]},
-     {title:'Defects & Outstanding Issues', unit:'No.', datasets:[
-       {key:'Defects_at_Handover', label:'Defects at HO',  color:'#EF4444', type:'line'},
-       {key:'Outstanding_Issues',  label:'Outstanding',    color:'#FB923C', type:'line'},
+     {title:'Handovers Completed',                    unit:'No.', datasets:[{key:'Handovers_Completed',         label:'Handovers',          color:'#F97316',type:'bar'}]},
+     {title:'Delivery to Planned Date %',              unit:'%',   datasets:[{key:'Delivery_to_Planned_pct',     label:'On-Time %',          color:'#FB923C',type:'line'}]},
+     {title:'Defects at Handover & Outstanding Issues',unit:'No.', datasets:[
+       {key:'Defects_at_Handover',        label:'Defects',            color:'#EF4444', type:'bar'},
+       {key:'Outstanding_Issues_Delivery',label:'Outstanding Issues', color:'#F59E0B', type:'bar'},
      ]},
    ]},
 
-  // ── 8. SALES ─────────────────────────────────
-  {id:'SALES', abbr:'SALES', name:'Sales',         color:'#1D9E75', ini:'MI', mgr:'Mike',
+  {id:'SALES', name:'Sales', abbr:'SALES', color:'#1D9E75', ini:'MK', mgr:'Mike',
    purpose:'Order intake and pipeline visibility.',
    kpis:[
-     {k:'Orders_Booked_USD',  l:'Orders Booked',               u:'USD', t:'c'},
-     {k:'Units_Sold',         l:'Units Sold',                  u:'No.', t:'i'},
-     {k:'Order_Changes',      l:'Order Changes Post-Contract', u:'No.', t:'i'},
-     {k:'Sales_Pipeline_USD', l:'Sales Pipeline',              u:'USD', t:'c'},
+     {k:'Orders_Booked_USD',       l:'Orders Booked',            u:'USD', t:'c'},
+     {k:'Units_Sold',              l:'Units Sold',               u:'No.', t:'i'},
+     {k:'Order_Changes_Post',      l:'Order Changes Post-Contract',u:'No.',t:'i'},
+     {k:'Sales_Pipeline_USD',      l:'Sales Pipeline',           u:'USD', t:'c'},
    ],
    overlayCharts:[
-     {title:'Orders Booked & Pipeline', unit:'USD', datasets:[
-       {key:'Orders_Booked_USD',  label:'Orders Booked',  color:'#1D9E75', type:'bar'},
-       {key:'Sales_Pipeline_USD', label:'Sales Pipeline', color:'#86EFAC', type:'line'},
+     {title:'Orders Booked vs Pipeline', unit:'USD', datasets:[
+       {key:'Sales_Pipeline_USD',  label:'Pipeline',      color:'#6EE7B7', type:'bar'},
+       {key:'Orders_Booked_USD',   label:'Orders Booked', color:'#1D9E75', type:'bar'},
      ]},
-     {title:'Units Sold',    unit:'No.', datasets:[{key:'Units_Sold',    label:'Units Sold',      color:'#34D399', type:'bar'}]},
-     {title:'Order Changes', unit:'No.', datasets:[{key:'Order_Changes', label:'Post-Contract Chg',color:'#EF4444', type:'line'}]},
+     {title:'Units Sold',                unit:'No.', datasets:[{key:'Units_Sold',         label:'Units',          color:'#34D399',type:'bar'}]},
+     {title:'Order Changes Post-Contract',unit:'No.', datasets:[{key:'Order_Changes_Post', label:'Order Changes',  color:'#F59E0B',type:'bar'}]},
    ]},
 
-  // ── 9. MARKETING ─────────────────────────────
-  {id:'MKTG', abbr:'MKTG', name:'Marketing',       color:'#EC4899', ini:'NP', mgr:'Nhi Pham',
+  {id:'MKTG', name:'Marketing', abbr:'MKTG', color:'#EC4899', ini:'NP', mgr:'Nhi Pham',
    purpose:'Lead generation effectiveness.',
    kpis:[
-     {k:'Qualified_Leads',     l:'Qualified Leads',  u:'No.', t:'i'},
-     {k:'Cost_per_Lead_USD',   l:'Cost per Lead',    u:'USD', t:'c'},
-     {k:'Conversion_Rate_pct', l:'Conversion Rate',  u:'%',   t:'p'},
-     {k:'Campaigns_Active',    l:'Campaigns Active', u:'No.', t:'i'},
+     {k:'Qualified_Leads',        l:'Qualified Leads',    u:'No.', t:'i'},
+     {k:'Cost_Per_Lead_USD',      l:'Cost per Lead',      u:'USD', t:'c'},
+     {k:'Conversion_Rate_pct',    l:'Conversion Rate',    u:'%',   t:'p'},
+     {k:'Campaigns_Active',       l:'Campaigns Active',   u:'No.', t:'i'},
+   ],
+   overlayCharts:[
+     {title:'Qualified Leads',   unit:'No.', datasets:[{key:'Qualified_Leads',     label:'Leads',       color:'#EC4899',type:'bar'}]},
+     {title:'Cost per Lead',     unit:'USD', datasets:[{key:'Cost_Per_Lead_USD',   label:'Cost/Lead',   color:'#F472B6',type:'line'}]},
+     {title:'Conversion Rate %', unit:'%',   datasets:[{key:'Conversion_Rate_pct', label:'Conversion %',color:'#BE185D',type:'line'}]},
    ]},
 
-  // ── 10. CUSTOMER SERVICE ─────────────────────
-  {id:'CS', abbr:'CS', name:'Customer Service',    color:'#0891B2', ini:'VN', mgr:'Van Nguyen',
+  {id:'CS', name:'Customer Service', abbr:'CS', color:'#0891B2', ini:'VN', mgr:'Van Nguyen',
    purpose:'Warranty control and resolution.',
    kpis:[
-     {k:'Claims_Open',     l:'Warranty Claims Open', u:'No.',  t:'i'},
-     {k:'New_Claims',      l:'New Claims',           u:'No.',  t:'i'},
-     {k:'Avg_Closeout_CS', l:'Avg Close-out Time',   u:'Days', t:'p'},
-     {k:'Repeat_Issues',   l:'Repeat Issues',        u:'No.',  t:'i'},
+     {k:'Warranty_Claims_Open',  l:'Warranty Claims Open',  u:'No.', t:'i'},
+     {k:'New_Claims',            l:'New Claims',            u:'No.', t:'i'},
+     {k:'Avg_Closeout_Days_CS',  l:'Avg Close-out Time',   u:'Days',t:'p'},
+     {k:'Repeat_Issues',         l:'Repeat Issues',         u:'No.', t:'i'},
    ],
    overlayCharts:[
-     {title:'Claims Open vs New Claims', unit:'No.', datasets:[
-       {key:'Claims_Open', label:'Claims Open', color:'#F87171', type:'bar'},
-       {key:'New_Claims',  label:'New Claims',  color:'#0891B2', type:'bar'},
+     {title:'Claims Open vs New', unit:'No.', datasets:[
+       {key:'Warranty_Claims_Open', label:'Open',      color:'#F87171', type:'bar'},
+       {key:'New_Claims',           label:'New Claims',color:'#0891B2', type:'bar'},
      ]},
-     {title:'Avg Close-out Time', unit:'Days', datasets:[{key:'Avg_Closeout_CS', label:'Close-out Days', color:'#06B6D4', type:'line'}]},
-     {title:'Repeat Issues',      unit:'No.',  datasets:[{key:'Repeat_Issues',   label:'Repeat Issues',  color:'#0E7490', type:'line'}]},
+     {title:'Avg Close-out Time', unit:'Days', datasets:[{key:'Avg_Closeout_Days_CS', label:'Avg Days',     color:'#0E7490',type:'line'}]},
+     {title:'Repeat Issues',      unit:'No.',  datasets:[{key:'Repeat_Issues',         label:'Repeat Issues',color:'#EF4444',type:'bar'}]},
    ]},
 
-  // ── 11. FINANCE ──────────────────────────────
-  {id:'FIN', abbr:'FIN', name:'Finance',           color:'#EF9F27', ini:'MD', mgr:'Mr Dung',
+  {id:'FIN', name:'Finance', abbr:'FIN', color:'#EF9F27', ini:'MD', mgr:'Mr Dung',
    purpose:'Cash and margin control.',
    kpis:[
-     {k:'Operating_CF_USD',    l:'Operating Cash Flow',       u:'USD', t:'c'},
-     {k:'Gross_Margin_pct',    l:'Gross Margin',              u:'%',   t:'p'},
-     {k:'AR_Over_60d_USD',     l:'Aged Receivables >60 Days', u:'USD', t:'c'},
-     {k:'Inventory_Value_USD', l:'Inventory Value',           u:'USD', t:'c'},
+     {k:'Operating_CF_USD',       l:'Operating Cash Flow',    u:'USD', t:'c'},
+     {k:'Gross_Margin_pct',       l:'Gross Margin',           u:'%',   t:'p'},
+     {k:'Aged_Receivables_USD',   l:'Aged Receivables >60d',  u:'USD', t:'c'},
+     {k:'Inventory_Value_USD',    l:'Inventory Value',        u:'USD', t:'c'},
    ],
    overlayCharts:[
-     {title:'Operating Cash Flow',                unit:'USD', datasets:[{key:'Operating_CF_USD',    label:'Cash Flow', color:'#EF9F27', type:'bar'}]},
-     {title:'Gross Margin %',                     unit:'%',   datasets:[{key:'Gross_Margin_pct',    label:'Margin %',  color:'#F59E0B', type:'line'}]},
-     {title:'Aged Receivables >60d & Inventory',  unit:'USD', datasets:[
-       {key:'AR_Over_60d_USD',     label:'AR >60d',   color:'#EF4444', type:'bar'},
-       {key:'Inventory_Value_USD', label:'Inventory', color:'#FCD34D', type:'line'},
+     {title:'Operating Cash Flow', unit:'USD', datasets:[{key:'Operating_CF_USD',     label:'Cash Flow',     color:'#EF9F27',type:'bar'}]},
+     {title:'Gross Margin %',      unit:'%',   datasets:[{key:'Gross_Margin_pct',     label:'Gross Margin %',color:'#F59E0B',type:'line'}]},
+     {title:'Aged Receivables >60d & Inventory', unit:'USD', datasets:[
+       {key:'Aged_Receivables_USD', label:'AR >60d',    color:'#EF4444', type:'bar'},
+       {key:'Inventory_Value_USD',  label:'Inventory',  color:'#FCD34D', type:'bar'},
      ]},
    ]},
 
-  // ── 12. HUMAN RESOURCES ──────────────────────
-  {id:'HR', abbr:'HR', name:'Human Resources',     color:'#7F77DD', ini:'MC', mgr:'Ms Chau',
+  {id:'HR', name:'Human Resources', abbr:'HR', color:'#7F77DD', ini:'MC', mgr:'Ms Chau',
    purpose:'Workforce stability.',
    kpis:[
-     {k:'Headcount_vs_Plan',  l:'Headcount vs Plan', u:'No.', t:'i'},
-     {k:'Staff_Turnover_pct', l:'Staff Turnover',    u:'%',   t:'p'},
-     {k:'Absenteeism_pct',    l:'Absenteeism',       u:'%',   t:'p'},
-     {k:'Overtime_pct',       l:'Overtime',          u:'%',   t:'p'},
+     {k:'Headcount_vs_Plan',  l:'Headcount vs Plan',  u:'No.', t:'i'},
+     {k:'Staff_Turnover_pct', l:'Staff Turnover',     u:'%',   t:'p'},
+     {k:'Absenteeism_pct',    l:'Absenteeism',        u:'%',   t:'p'},
+     {k:'Overtime_pct',       l:'Overtime',           u:'%',   t:'p'},
    ],
    overlayCharts:[
-     {title:'Turnover / Absenteeism / Overtime', unit:'%', datasets:[
-       {key:'Staff_Turnover_pct', label:'Turnover',    color:'#7F77DD', type:'line'},
-       {key:'Absenteeism_pct',    label:'Absenteeism', color:'#A78BFA', type:'line'},
-       {key:'Overtime_pct',       label:'Overtime',    color:'#DDD6FE', type:'line'},
+     {title:'Headcount vs Plan', unit:'No.', datasets:[{key:'Headcount_vs_Plan',  label:'Headcount', color:'#7F77DD',type:'bar'}]},
+     {title:'Staff Turnover & Absenteeism %', unit:'%', datasets:[
+       {key:'Staff_Turnover_pct', label:'Turnover %',    color:'#F87171', type:'line'},
+       {key:'Absenteeism_pct',    label:'Absenteeism %', color:'#FB923C', type:'line'},
      ]},
-     {title:'Headcount vs Plan', unit:'No.', datasets:[{key:'Headcount_vs_Plan', label:'Headcount', color:'#6D28D9', type:'bar'}]},
+     {title:'Overtime %', unit:'%', datasets:[{key:'Overtime_pct', label:'Overtime %', color:'#A78BFA',type:'line'}]},
    ]},
 
-  // ── 13. HSE ───────────────────────────────────
-  {id:'HSE', abbr:'HSE', name:'HSE',               color:'#639922', ini:'MP', mgr:'Mr Phong',
+  {id:'HSE', name:'HSE', abbr:'HSE', color:'#16A34A', ini:'MP', mgr:'Mr Phong',
    purpose:'Safe operations and compliance.',
    kpis:[
-     {k:'TRIR',                    l:'TRIR',                      u:'Rate', t:'p'},
-     {k:'LTIFR',                   l:'LTIFR',                     u:'Rate', t:'p'},
-     {k:'Near_Miss_Reports',       l:'Near Miss Reports',         u:'No.',  t:'i'},
-     {k:'HighRisk_Compliance_pct', l:'High-Risk Work Compliance', u:'%',    t:'p'},
+     {k:'TRIR',                   l:'TRIR',                    u:'rate',t:'p'},
+     {k:'LTIFR',                  l:'LTIFR',                   u:'rate',t:'p'},
+     {k:'Near_Miss_Reports',      l:'Near Miss Reports',       u:'No.', t:'i'},
+     {k:'High_Risk_Work_Comp_pct',l:'High-Risk Work Compliance',u:'%',  t:'p'},
+   ],
+   overlayCharts:[
+     {title:'TRIR & LTIFR',        unit:'rate', datasets:[
+       {key:'TRIR',  label:'TRIR',  color:'#DC2626', type:'line'},
+       {key:'LTIFR', label:'LTIFR', color:'#F97316', type:'line'},
+     ]},
+     {title:'Near Miss Reports',            unit:'No.', datasets:[{key:'Near_Miss_Reports',       label:'Near Miss',   color:'#16A34A',type:'bar'}]},
+     {title:'High-Risk Work Compliance %',  unit:'%',   datasets:[{key:'High_Risk_Work_Comp_pct', label:'Compliance %',color:'#4ADE80',type:'line'}]},
    ]},
 ];
 
 var USERS = {
-  bod:          {role:'bod',   name:'BOD Name',          ini:'',  color:'#EF9F27',pass:'bod123'},
-  admin:        {role:'admin', name:'System Admin',       ini:'',  color:'#374151',pass:'admin123'},
-  production:   {role:'dept',  dept:'PROD',  name:'Rudy Knoesen',  ini:'RK', color:'#378ADD',pass:'production123'},
-  qa:           {role:'dept',  dept:'QA',    name:'Mr Duy Anh',    ini:'DA', color:'#D4537E',pass:'qa123'},
-  design:       {role:'dept',  dept:'DT',    name:'James',         ini:'JM', color:'#8B5CF6',pass:'design123'},
-  project_dev:  {role:'dept',  dept:'PD',    name:'Project Lead',  ini:'PL', color:'#14B8A6',pass:'project_dev123'},
-  sc:           {role:'dept',  dept:'SCM',   name:'Mr Loc',        ini:'ML', color:'#D85A30',pass:'sc123'},
-  cid:          {role:'dept',  dept:'CID',   name:'CID Lead',      ini:'CI', color:'#6366F1',pass:'cid123'},
-  th_handover:  {role:'dept',  dept:'TH',    name:'Phil Harper',   ini:'PH', color:'#F97316',pass:'th_handover123'},
-  sales:        {role:'dept',  dept:'SALES', name:'Mike',          ini:'MI', color:'#1D9E75',pass:'sales123'},
-  marketing:    {role:'dept',  dept:'MKTG',  name:'Nhi Pham',      ini:'NP', color:'#EC4899',pass:'marketing123'},
-  cs:           {role:'dept',  dept:'CS',    name:'Van Nguyen',    ini:'VN', color:'#0891B2',pass:'cs123'},
-  finance:      {role:'dept',  dept:'FIN',   name:'Mr Dung',       ini:'MD', color:'#EF9F27',pass:'finance123'},
-  hr:           {role:'dept',  dept:'HR',    name:'Ms Chau',       ini:'MC', color:'#7F77DD',pass:'hr123'},
-  hse:          {role:'dept',  dept:'HSE',   name:'Mr Phong',      ini:'MP', color:'#639922',pass:'hse123'},
+  bod:         {role:'bod',  name:'BOD',                      ini:'',color:'#EF9F27',pass:'bod123'},
+  admin:       {role:'admin',name:'System Admin',              ini:'',color:'#374151',pass:'admin123'},
+  production:  {role:'dept', dept:'PROD',   name:'Rudy Knoesen',    ini:'RK',color:'#378ADD',pass:'production123'},
+  qa:          {role:'dept', dept:'QA',     name:'Mr Duy Anh',      ini:'DA',color:'#D4537E',pass:'qa123'},
+  design:      {role:'dept', dept:'DESIGN', name:'James',            ini:'JA',color:'#8B5CF6',pass:'design123'},
+  project_dev: {role:'dept', dept:'PD',     name:'Project Lead',     ini:'PL',color:'#14B8A6',pass:'project_dev123'},
+  sc:          {role:'dept', dept:'SC',     name:'Mr Loc',           ini:'ML',color:'#D85A30',pass:'sc123'},
+  cid:         {role:'dept', dept:'CID',    name:'CID Lead',         ini:'CL',color:'#6366F1',pass:'cid123'},
+  tl_handover: {role:'dept', dept:'TL',     name:'Phil Harper',      ini:'PH',color:'#F97316',pass:'tl_handover123'},
+  sales:       {role:'dept', dept:'SALES',  name:'Mike',             ini:'MK',color:'#1D9E75',pass:'sales123'},
+  marketing:   {role:'dept', dept:'MKTG',   name:'Nhi Pham',         ini:'NP',color:'#EC4899',pass:'marketing123'},
+  cs:          {role:'dept', dept:'CS',     name:'Van Nguyen',       ini:'VN',color:'#0891B2',pass:'cs123'},
+  finance:     {role:'dept', dept:'FIN',    name:'Mr Dung',          ini:'MD',color:'#EF9F27',pass:'finance123'},
+  hr:          {role:'dept', dept:'HR',     name:'Ms Chau',          ini:'MC',color:'#7F77DD',pass:'hr123'},
+  hse:         {role:'dept', dept:'HSE',    name:'Mr Phong',         ini:'MP',color:'#16A34A',pass:'hse123'},
 };
 
 // ═══════════════════════════════════════════════
@@ -807,8 +807,8 @@ function buildDeptLeft(){
     +'<div class="inp-st">'
     +'<span style="font-size:11px;color:var(--mu);font-weight:500">Status</span>'
     +'<span class="badge '+(saved?'bg':'ba')+'" id="st-badge">'+(saved?'Submitted':'Pending')+'</span></div>'
-    +'<div class="dept-purpose-bar">'+dept.purpose+'</div>'
-    +'<div class="lsec">'+dept.name+' <span class="dept-abbr-badge">'+dept.abbr+'</span> — '+MN[selM]+' '+selY+'</div>'
+    +'<div class="lsec">'+dept.name+' ('+dept.abbr+') — '+MN[selM]+' '+selY+'</div>'
+    +'<div class="dept-purpose">'+dept.purpose+'</div>'
     +'<div class="ki-list">'+inputs+'</div>'
     +'<div class="ki" style="margin-bottom:13px">'
     +'<label>Comment</label>'
@@ -927,8 +927,8 @@ function saveDept(){
 // ═══════════════════════════════════════════════
 function renderDeptRight(){
   var dept=DEPTS.find(function(d){return d.id===deptId;});
-  el('rp-title').innerHTML=dept.name+' <span class="dept-abbr-badge">'+dept.abbr+'</span>';
-  el('rp-sub').textContent=dept.mgr+' · '+dept.purpose;
+  el('rp-title').textContent=dept.name+' ('+dept.abbr+')';
+  el('rp-sub').textContent=dept.purpose+' · Manager: '+dept.mgr;
   el('btn-bod-back').classList.add('hidden');
   var mw=el('rp-msg-btn-wrap');
   if(mw){var ud=getDeptUnreadBadge(deptId);mw.innerHTML='<button class="msg-action-btn" id="rp-open-msg" data-dept="'+deptId+'">&#x1F4AC; Messages'+ud+'</button>';}
@@ -938,17 +938,17 @@ function renderDeptRight(){
   var col=el('d-col');
   if(dept.overlayCharts){
     dept.overlayCharts.forEach(function(oc,i){
-      renderOverlayChart(col,'d_oc_'+i,oc,range,deptId);
+      renderOverlayChart(col,'d_oc_'+i,oc,range,deptId,true);
     });
   } else {
     dept.kpis.forEach(function(kpi,i){
       var vals=range.dkeys.map(function(dk){return getGSVal(deptId,dk.y,dk.m,kpi.k);});
       var cid='d_'+i;
       var div=document.createElement('div');div.className='cc';
-      try{div.dataset.oc=JSON.stringify({title:kpi.l,unit:kpi.u,datasets:[{key:kpi.k,label:kpi.l,color:dept.color,type:'line'}]});}catch(e){}
-      div.dataset.did=deptId||id;
-      div.innerHTML='<div class="cc-hint">🔍 Drill down</div><div class="cc-t">'+kpi.l+'</div>'
+      div.dataset.chartId=cid;div.dataset.chartTitle=kpi.l;
+      div.innerHTML='<div class="cc-t">'+kpi.l+'</div>'
         +'<div class="cc-s">'+kpi.u+' · '+rangeLabel(range)+'</div>'
+        +'<div class="cc-clickhint">Click to expand</div>'
         +'<div class="cc-w"><canvas id="'+cid+'"></canvas></div>';
       col.appendChild(div);
       CH[cid]=mkLine(cid,range.labels,kpi.l,vals,dept.color,kpi.u);
@@ -957,7 +957,7 @@ function renderDeptRight(){
 }
 
 // shared overlay chart renderer
-function renderOverlayChart(col, cid, oc, range, did){
+function renderOverlayChart(col, cid, oc, range, did, gridMode){
   var isMulti=oc.datasets.length>1;
   var legendHtml=isMulti?'<div class="legend">'+oc.datasets.map(function(ds){
     return '<div class="legend-item"><span class="legend-dot" style="background:'+ds.color+'"></span>'+ds.label+'</div>';
@@ -965,15 +965,14 @@ function renderOverlayChart(col, cid, oc, range, did){
   var isTwoBarCheck=oc.datasets.length===2&&oc.datasets[0].type==='bar'&&oc.datasets[1].type==='bar';
   // Outer wrapper: for twoBar charts use split layout (monthly | total)
   var wrapper=document.createElement('div');
-  // twoBar split cards span both columns; others are single-column cards
-  wrapper.className='cc'+(isTwoBarCheck?' cc-span2':'');
-  // Store serialized oc for drill-down (strip circular refs)
-  try{wrapper.dataset.oc=JSON.stringify(oc);}catch(e){}
-  wrapper.dataset.did=did;
+  wrapper.className='cc';
+  wrapper.dataset.chartId=cid;
+  wrapper.dataset.chartTitle=oc.title;
+  var clickHint=gridMode?'<div class="cc-clickhint">Click to expand</div>':'';
   if(isTwoBarCheck){
-    wrapper.innerHTML='<div class="cc-hint">🔍 Drill down</div><div class="cc-t">'+oc.title+'</div>'
+    wrapper.innerHTML='<div class="cc-t">'+oc.title+'</div>'
       +'<div class="cc-s">'+rangeLabel(range)+'</div>'
-      +legendHtml
+      +clickHint+legendHtml
       +'<div class="cc-split">'
       +'<div class="cc-monthly"><div class="cc-w tall"><canvas id="'+cid+'"></canvas></div></div>'
       +'<div class="cc-total" id="'+cid+'-tot-card">'
@@ -982,9 +981,9 @@ function renderOverlayChart(col, cid, oc, range, did){
       +'<div class="cc-total-w"><canvas id="'+cid+'-tot"></canvas></div>'
       +'</div></div>';
   } else {
-    wrapper.innerHTML='<div class="cc-hint">🔍 Drill down</div><div class="cc-t">'+oc.title+'</div>'
+    wrapper.innerHTML='<div class="cc-t">'+oc.title+'</div>'
       +'<div class="cc-s">'+rangeLabel(range)+'</div>'
-      +legendHtml
+      +clickHint+legendHtml
       +'<div class="cc-w'+(isMulti?' tall':'')+'"><canvas id="'+cid+'"></canvas></div>';
   }
   var div=wrapper;
@@ -1121,7 +1120,7 @@ function buildbodLeft(){
       +'<div class="acc-h'+(open?' open':'')+'" data-dept="'+d.id+'">'
       +'<span class="ah-dot" style="background:'+d.color+'"></span>'
       +'<div class="ah-info">'
-      +'<div class="ah-name">'+d.name+' <span class="dept-abbr-badge">'+d.abbr+'</span>'+(getDeptUnreadBadge(d.id))+'</div>'
+      +'<div class="ah-name">'+d.name+'</div>'
       +'<div class="ah-last '+lastClass+'">'+lastLabel+'</div>'
       +'</div>'
       +'<span class="ah-st '+(hasRow?'st-ok':'st-pend')+'"></span>'
@@ -1173,8 +1172,7 @@ function buildAccBody(dept){
       +'</div>';
   }).join('');
   var cmt=row?getGSVal(dept.id,curY,curM0,'comment')||'':'';
-  return '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--hi);margin-bottom:4px">Snapshot — '+MN[curM0]+' '+curY+'</div>'
-    +'<div style="font-size:10px;color:var(--mu);font-style:italic;margin-bottom:6px;border-left:2px solid var(--bl);padding-left:6px">'+dept.purpose+'</div>'
+  return '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--hi);margin-bottom:6px">Snapshot — '+MN[curM0]+' '+curY+'</div>'
     +'<div>'+rows+'</div>'
     +(cmt?'<div class="ks-cmt">'+cmt+'</div>':'')
     +'<button class="vc-btn" data-dept="'+dept.id+'">View all charts →</button>';
@@ -1247,7 +1245,7 @@ function renderbodRight(id){
       return '<tr>'
         +'<td><span style="display:inline-flex;align-items:center;gap:6px">'
         +'<span style="width:7px;height:7px;border-radius:50%;background:'+d.color+';display:inline-block"></span>'
-        +d.name+' <span class="dept-abbr-badge">'+d.abbr+'</span></span></td>'
+        +d.name+'</span></td>'
         +'<td style="color:var(--mu)">'+d.mgr+'</td>'
         +'<td><span class="badge '+badgeCls+'" style="'+badgeStyle+'">'+badgeTxt+'</span></td>'
         +'<td style="color:var(--mu);font-size:11px">'+ts+'</td>'
@@ -1255,11 +1253,10 @@ function renderbodRight(id){
         +'</tr>';
     }).join('');
     var ovCharts=DEPTS.map(function(d,i){
-      return '<div class="cc" data-dept-ov="'+d.id+'" title="Click to view '+d.name+' charts">'
-        +'<div class="cc-hint">🔍 View charts</div>'
+      return '<div class="cc">'
         +'<div class="cc-t" style="display:flex;align-items:center;gap:6px">'
         +'<span style="width:8px;height:8px;border-radius:50%;background:'+d.color+';display:inline-block;flex-shrink:0"></span>'
-        +d.name+' <span class="dept-abbr-badge">'+d.abbr+'</span> — '+d.kpis[0].l+'</div>'
+        +d.name+' — '+d.kpis[0].l+'</div>'
         +'<div class="cc-s">'+d.kpis[0].u+'</div>'
         +'<div class="cc-w"><canvas id="b_ov_'+i+'"></canvas></div></div>';
     }).join('');
@@ -1268,7 +1265,7 @@ function renderbodRight(id){
       +'<span style="font-size:11px;font-weight:400;color:var(--mu)">'+subm+'/'+DEPTS.length+' submitted</span></div>'
       +'<table><thead><tr><th>Department</th><th>Manager</th><th>Status</th><th>Submitted at</th><th></th></tr></thead>'
       +'<tbody>'+tRows+'</tbody></table></div>'
-      +'<div class="charts-grid" style="margin-top:16px">'+ovCharts+'</div>';
+      +'<div class="charts-col">'+ovCharts+'</div>';
     DEPTS.forEach(function(d,i){
       var range=buildRange(d.id);
       var vals=range.dkeys.map(function(dk){return getGSVal(d.id,dk.y,dk.m,d.kpis[0].k);});
@@ -1282,23 +1279,21 @@ function renderbodRight(id){
   var mw2=el('rp-msg-btn-wrap');
   if(mw2){mw2.innerHTML='<button class="msg-action-btn" id="rp-open-msg" data-dept="'+id+'">&#x1F4AC; Message</button>';}
   var dept=DEPTS.find(function(d){return d.id===id;});
-  el('rp-title').innerHTML=dept.name+' <span class="dept-abbr-badge">'+dept.abbr+'</span>';
-  el('rp-sub').textContent=dept.mgr+' · '+dept.purpose;
+  el('rp-title').textContent=dept.name;
+  el('rp-sub').textContent=dept.purpose;
   var range=buildRange(id);
   body.innerHTML='<div class="charts-grid" id="b-col"></div>';
   var col=el('b-col');
   if(dept.overlayCharts){
     dept.overlayCharts.forEach(function(oc,i){
-      renderOverlayChart(col,'b_oc_'+i,oc,range,id);
+      renderOverlayChart(col,'b_oc_'+i,oc,range,id,true);
     });
   } else {
     dept.kpis.forEach(function(kpi,i){
       var vals=range.dkeys.map(function(dk){return getGSVal(id,dk.y,dk.m,kpi.k);});
       var cid='b_'+i;
       var div=document.createElement('div');div.className='cc';
-      try{div.dataset.oc=JSON.stringify({title:kpi.l,unit:kpi.u,datasets:[{key:kpi.k,label:kpi.l,color:dept.color,type:'line'}]});}catch(e){}
-      div.dataset.did=deptId||id;
-      div.innerHTML='<div class="cc-hint">🔍 Drill down</div><div class="cc-t">'+kpi.l+'</div>'
+      div.innerHTML='<div class="cc-t">'+kpi.l+'</div>'
         +'<div class="cc-s">'+kpi.u+' · '+rangeLabel(range)+'</div>'
         +'<div class="cc-w"><canvas id="'+cid+'"></canvas></div>';
       col.appendChild(div);
@@ -1390,58 +1385,11 @@ function mkLine(id,labels,label,data,color,unit){
 
 
 // ═══════════════════════════════════════════════
-// MESSAGING — BOD <-> Dept 2-way
-// Storage: localStorage (instant) + Google Sheet (cross-device)
-// GAS saves rows to "Messages" sheet: id,from,fromRole,dept,text,ts
-// To enable cross-device: fill MSG_GID after creating Messages tab
+// MESSAGING — BOD <-> Dept 2-way communication
 // ═══════════════════════════════════════════════
 var msgDeptTarget=null;
-var MSG_LOADED_FROM_SHEET=false; // loaded once per session
-
-function getMsgs(){
-  try{var r=localStorage.getItem('cmi_msgs');return r?JSON.parse(r):[];}
-  catch(e){return[];}
-}
-function saveMsgsLocal(m){
-  try{localStorage.setItem('cmi_msgs',JSON.stringify(m));}catch(e){}
-}
-
-// Fetch messages CSV from Google Sheet tab → merge into localStorage
-function syncMsgsFromSheet(cb){
-  if(!MSG_GID||MSG_LOADED_FROM_SHEET){if(cb)cb();return;}
-  var url='https://docs.google.com/spreadsheets/d/'+SHEET_ID
-    +'/export?format=csv&gid='+MSG_GID+'&t='+Date.now();
-  fetch(url)
-    .then(function(r){return r.text();})
-    .then(function(csv){
-      var rows=parseCSV(csv);
-      // Header: id,from,fromRole,dept,text,ts
-      var sheetMsgs=[];
-      for(var i=1;i<rows.length;i++){
-        var r=rows[i];
-        if(r[0]&&r[4]){ // id + text must exist
-          sheetMsgs.push({
-            id:parseInt(r[0])||Date.now()+i,
-            from:r[1]||'',fromRole:r[2]||'',dept:r[3]||'',
-            text:r[4]||'',ts:r[5]||'',read:[]
-          });
-        }
-      }
-      // Merge: use sheet as source of truth, keep local msgs not yet on sheet
-      var local=getMsgs();
-      var sheetIds=sheetMsgs.map(function(m){return m.id;});
-      local.forEach(function(lm){if(sheetIds.indexOf(lm.id)<0)sheetMsgs.push(lm);});
-      // Sort by ts
-      sheetMsgs.sort(function(a,b){return a.ts<b.ts?-1:1;});
-      saveMsgsLocal(sheetMsgs);
-      MSG_LOADED_FROM_SHEET=true;
-      if(cb)cb();
-    })
-    .catch(function(){
-      MSG_LOADED_FROM_SHEET=true; // don't retry on fail
-      if(cb)cb();
-    });
-}
+function getMsgs(){try{var r=localStorage.getItem('cmi_msgs');return r?JSON.parse(r):[];}catch(e){return[];}}
+function saveMsgsLocal(m){try{localStorage.setItem('cmi_msgs',JSON.stringify(m));}catch(e){}}
 function getUnreadCount(deptId){
   var msgs=getMsgs();var me=U?U.username:'';
   return msgs.filter(function(m){
@@ -1459,16 +1407,20 @@ function openMsgPanel(deptId){
   msgDeptTarget=deptId;
   el('msg-panel-title').textContent='\u{1F4AC} '+(dept?dept.name:deptId);
   el('msg-panel').classList.add('open');
-  // Sync from sheet then refresh
-  syncMsgsFromSheet(function(){refreshMsgThread();});
-  var msgs=getMsgs();var me=U?U.username:'';
-  msgs.forEach(function(m){if(m.dept===deptId){if(!m.read)m.read=[];if(m.read.indexOf(me)<0)m.read.push(me);}});
-  saveMsgsLocal(msgs);
+  // Sync from sheet first, then render
+  syncMsgsFromSheet(function(){
+    refreshMsgThread();
+    var msgs=getMsgs();var me=U?U.username:'';
+    msgs.forEach(function(m){if(m.dept===deptId){if(!m.read)m.read=[];if(m.read.indexOf(me)<0)m.read.push(me);}});
+    saveMsgsLocal(msgs);
+  });
 }
 function closeMsgPanel(){el('msg-panel').classList.remove('open');msgDeptTarget=null;}
 function refreshMsgThread(){
   if(!msgDeptTarget)return;
   var msgs=getMsgs().filter(function(m){return m.dept===msgDeptTarget;});
+  // Admin cannot see BOD messages
+  if(U&&U.role==='admin') msgs=msgs.filter(function(m){return m.fromRole!=='bod';});
   var thread=el('msg-thread');
   if(!msgs.length){thread.innerHTML='<div style="font-size:12px;color:var(--hi);text-align:center;padding:20px">No messages yet.</div>';return;}
   thread.innerHTML=msgs.map(function(m){
@@ -1488,158 +1440,33 @@ function sendMsg(){
     text:text,ts:new Date().toISOString(),read:[U.username]};
   var msgs=getMsgs();msgs.push(msg);saveMsgsLocal(msgs);
   inp.value='';refreshMsgThread();
-  // Send to GAS via image beacon (CORS-free, fire-and-forget)
-  if(typeof SCRIPT_URL!=='undefined'&&SCRIPT_URL){
-    var p=encodeURIComponent;
-    var params='action=saveMsg&id='+p(msg.id)+'&from='+p(msg.from)
-      +'&fromRole='+p(msg.fromRole)+'&dept='+p(msg.dept)
-      +'&text='+p(msg.text)+'&ts='+p(msg.ts);
+  // Save to GAS via beacon
+  if(GAS_MSG_URL){
     var beacon=new Image();
-    beacon.src=SCRIPT_URL+'?'+params+'&cb='+Date.now();
-  }
-  // Also show a note if MSG_GID not set
-  if(!MSG_GID){
-    var info=el('msg-sync-note');
-    if(info){info.textContent='⚠ Set MSG_GID to sync across devices.';info.style.display='block';}
+    beacon.src=GAS_MSG_URL
+      +'?action=sendMsg'
+      +'&id='+encodeURIComponent(msg.id)
+      +'&from='+encodeURIComponent(msg.from)
+      +'&fromRole='+encodeURIComponent(msg.fromRole)
+      +'&dept='+encodeURIComponent(msg.dept)
+      +'&text='+encodeURIComponent(msg.text)
+      +'&ts='+encodeURIComponent(msg.ts)
+      +'&t='+Date.now();
   }
 }
 function showMsgHistory(){
-  el('modal-title').textContent='Message History (loading…)';
-  el('modal-overlay').style.display='flex';
-  el('modal-body').innerHTML='<div style="text-align:center;padding:20px;color:var(--hi)">Loading…</div>';
-  syncMsgsFromSheet(function(){
-    var msgs=getMsgs().slice().reverse();
-    el('modal-title').textContent='Message History'+(MSG_GID?' (synced)':'');
+  var msgs=getMsgs().slice().reverse();
+  el('modal-title').textContent='Message History';
   el('modal-body').innerHTML=!msgs.length
     ?'<div style="color:var(--hi);font-size:12px;text-align:center;padding:20px">No messages yet.</div>'
     :msgs.map(function(m){
       var dept=DEPTS.find(function(d){return d.id===m.dept;});
       return '<div class="hist-item"><div class="hist-meta">'+m.fromRole.toUpperCase()+' \u00b7 '+m.from+' \u2192 '+(dept?dept.name:m.dept)+' \u00b7 '+new Date(m.ts).toLocaleString()+'</div><div class="hist-text">'+esc(m.text)+'</div></div>';
     }).join('');
-  });
+  el('modal-overlay').style.display='flex';
 }
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-
-// ═══════════════════════════════════════════════
-// DRILL-DOWN MODAL — click any chart card to enlarge
-// ═══════════════════════════════════════════════
-function openDrillDown(oc, did){
-  var range = buildRange(did);
-  var isTwoBar = oc.datasets.length===2
-    && oc.datasets[0].type==='bar' && oc.datasets[1].type==='bar';
-  var isMulti = oc.datasets.length > 1;
-
-  // Header
-  el('drill-title').textContent = oc.title;
-  el('drill-sub').textContent   = rangeLabel(range);
-
-  // Legend
-  var legendHtml='<div class="drill-legend">'
-    +oc.datasets.map(function(ds){
-      return '<div class="dl-item"><span class="dl-dot" style="background:'+ds.color+'"></span>'+ds.label+'</div>';
-    }).join('');
-  if(isTwoBar) legendHtml+='<div class="dl-item"><span class="dl-dot" style="background:#6366F1;border-radius:50%"></span>Ratio %</div>';
-  legendHtml+='</div>';
-
-  // Body HTML
-  var bodyHtml = legendHtml;
-  if(isTwoBar){
-    bodyHtml += '<div class="drill-split">'
-      +'<div><div class="drill-cw"><canvas id="drill-canvas"></canvas></div></div>'
-      +'<div class="drill-total-card">'
-      +'<div class="dt-title">Total</div>'
-      +'<div class="dt-sub">'+rangeLabel(range)+'</div>'
-      +'<div class="dt-cw"><canvas id="drill-tot-canvas"></canvas></div>'
-      +'<div class="dt-ratio" id="drill-ratio"></div>'
-      +'</div></div>';
-  } else {
-    bodyHtml += '<div class="drill-cw"><canvas id="drill-canvas"></canvas></div>';
-  }
-  el('drill-body').innerHTML = bodyHtml;
-  el('drill-overlay').style.display = 'flex';
-
-  // Destroy previous drill charts
-  if(CH['drill-c']){try{CH['drill-c'].destroy();}catch(e){}delete CH['drill-c'];}
-  if(CH['drill-t']){try{CH['drill-t'].destroy();}catch(e){}delete CH['drill-t'];}
-
-  var many = range.labels.length > 24;
-  var datasets = oc.datasets.map(function(ds){
-    var vals = range.dkeys.map(function(dk){return getGSVal(did,dk.y,dk.m,ds.key);});
-    var base = {label:ds.label,data:vals,borderColor:ds.color,
-      backgroundColor:ds.color+(ds.type==='bar'?'dd':'40'),
-      tension:.3,fill:ds.type!=='bar',
-      pointRadius:many?2:4,borderWidth:ds.type==='bar'?1:2,
-      pointBackgroundColor:ds.color,spanGaps:true,yAxisID:'y'};
-    if(ds.type==='bar'){base.type='bar';base.borderRadius=3;}
-    return base;
-  });
-
-  var va=[], vb=[];
-  if(isTwoBar){
-    va = range.dkeys.map(function(dk){return getGSVal(did,dk.y,dk.m,oc.datasets[0].key);});
-    vb = range.dkeys.map(function(dk){return getGSVal(did,dk.y,dk.m,oc.datasets[1].key);});
-    var rv = va.map(function(a,i){return a&&vb[i]?Math.round(vb[i]/a*1000)/10:null;});
-    datasets.push({type:'line',label:'Ratio %',data:rv,
-      borderColor:'#6366F1',backgroundColor:'transparent',
-      tension:.3,fill:false,pointRadius:many?2:3,
-      pointBackgroundColor:'#6366F1',spanGaps:true,yAxisID:'y2',borderDash:[4,3]});
-  }
-
-  var opts = chartOpts(oc.unit||'');
-  if(isTwoBar){
-    opts.scales.y2={type:'linear',position:'right',grid:{drawOnChartArea:false},
-      ticks:{font:{size:11},callback:function(v){return v+'%';}}};
-  }
-  opts.plugins.datalabels = {
-    display:function(ctx){return ctx.dataset.type==='bar'&&!many;},
-    color:'#333',anchor:'end',align:'top',font:{size:10,weight:'600'},
-    formatter:function(v){
-      if(v==null)return null;
-      if(oc.unit==='USD')return v>=1e6?(Math.round(v/1e5)/10)+'M':v>=1000?Math.round(v/1000)+'k':'';
-      return Math.round(v);
-    }
-  };
-
-  CH['drill-c'] = new Chart(document.getElementById('drill-canvas'),{
-    type: isTwoBar||oc.datasets[0].type==='bar' ? 'bar' : 'line',
-    data:{labels:range.labels,datasets:datasets},
-    options:opts,plugins:[ChartDataLabels]
-  });
-
-  // Total chart for twoBar
-  if(isTwoBar){
-    var totA=va.reduce(function(s,v){return s+(v||0);},0);
-    var totB=vb.reduce(function(s,v){return s+(v||0);},0);
-    var totRatio=totA?Math.round(totB/totA*1000)/10:null;
-    if(el('drill-ratio')&&totRatio!==null)
-      el('drill-ratio').textContent='Ratio: '+totRatio+'%';
-    CH['drill-t'] = new Chart(document.getElementById('drill-tot-canvas'),{
-      type:'bar',
-      data:{labels:[oc.datasets[0].label,oc.datasets[1].label],
-        datasets:[{data:[totA,totB],
-          backgroundColor:[oc.datasets[0].color+'bb',oc.datasets[1].color+'bb'],
-          borderColor:[oc.datasets[0].color,oc.datasets[1].color],
-          borderWidth:1,borderRadius:4}]},
-      options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:20}},
-        plugins:{legend:{display:false},datalabels:{display:true,color:'#333',
-          anchor:'end',align:'top',font:{size:10,weight:'700'},
-          formatter:function(v){
-            if(v==null)return null;
-            if(oc.unit==='USD')return v>=1e6?(Math.round(v/1e5)/10)+'M':v>=1000?Math.round(v/1000)+'k':'';
-            return Math.round(v);
-          }}},
-        scales:{y:{display:false,beginAtZero:true},x:{grid:{display:false},ticks:{font:{size:11}}}}},
-      plugins:[ChartDataLabels]
-    });
-  }
-}
-
-function closeDrillDown(){
-  el('drill-overlay').style.display='none';
-  if(CH['drill-c']){try{CH['drill-c'].destroy();}catch(e){}delete CH['drill-c'];}
-  if(CH['drill-t']){try{CH['drill-t'].destroy();}catch(e){}delete CH['drill-t'];}
-}
 // ═══════════════════════════════════════════════
 // CHANGE PASSWORD
 // Passwords are stored in localStorage so they
@@ -1663,9 +1490,6 @@ function getPass(username){
 // Sheet GID for "Passwords" tab — update this after first deploy
 // To find: open Google Sheet → click Passwords tab → look at URL: ...#gid=XXXXXX
 var PW_SHEET_GID = '41732400';
-// MSG_GID: After creating 'Messages' tab in Google Sheet, fill in its GID here.
-// Find it: open Sheet → click Messages tab → look at URL: ...#gid=XXXXXX
-var MSG_GID = ''; // ← fill in after creating Messages tab
 
 function getPwSheetUrl(){
   return 'https://docs.google.com/spreadsheets/d/'+SHEET_ID
@@ -1707,6 +1531,74 @@ function pushPasswordToGAS(username, newPass, onDone, onFail){
   setTimeout(function(){if(onDone)onDone();}, 2000);
 }
 
+// ═══════════════════════════════════════════════
+// DRILL-DOWN — click chart → full-screen modal
+// ═══════════════════════════════════════════════
+var drillChart=null;
+function openDrill(title, chartInstance){
+  if(!chartInstance) return;
+  var ov=el('drill-ov');
+  el('drill-title').textContent=title;
+  ov.style.display='flex';
+  // Clone chart config into drill canvas
+  if(drillChart){try{drillChart.destroy();}catch(e){}}
+  var src=chartInstance;
+  var cfg={
+    type:src.config.type,
+    data:JSON.parse(JSON.stringify(src.config.data)),
+    options:JSON.parse(JSON.stringify(src.config.options)),
+    plugins:src.config.plugins
+  };
+  // Bigger fonts for drill view
+  if(cfg.options.scales){
+    if(cfg.options.scales.x) cfg.options.scales.x.ticks={font:{size:11}};
+    if(cfg.options.scales.y) cfg.options.scales.y.ticks={font:{size:11}};
+  }
+  if(cfg.options.plugins&&cfg.options.plugins.datalabels){
+    cfg.options.plugins.datalabels.font={size:11,weight:'700'};
+  }
+  drillChart=new Chart(el('drill-canvas'),cfg);
+}
+function closeDrill(){
+  el('drill-ov').style.display='none';
+  if(drillChart){try{drillChart.destroy();}catch(e){} drillChart=null;}
+}
+
+// ═══════════════════════════════════════════════
+// MESSAGE SYNC from GAS Sheet CSV
+// ═══════════════════════════════════════════════
+var MSG_SHEET_GID = '135962340'; // ← Fill in GID of Messages sheet tab after first message saved
+function getMsgSheetUrl(){
+  return 'https://docs.google.com/spreadsheets/d/'+SHEET_ID
+    +'/export?format=csv&gid='+MSG_SHEET_GID+'&t='+Date.now();
+}
+function syncMsgsFromSheet(cb){
+  if(!MSG_SHEET_GID){if(cb)cb();return;}
+  fetch(getMsgSheetUrl())
+    .then(function(r){return r.text();})
+    .then(function(csv){
+      var rows=parseCSV(csv);
+      if(rows.length<2){if(cb)cb();return;}
+      // cols: id,from,fromRole,dept,text,ts
+      var msgs=[];
+      for(var i=1;i<rows.length;i++){
+        var r=rows[i];
+        if(!r[0])continue;
+        msgs.push({id:r[0],from:r[1],fromRole:r[2],dept:r[3],text:r[4],ts:r[5],read:[]});
+      }
+      // merge with localStorage (keep read status)
+      var local=getMsgs();
+      var localIds={};
+      local.forEach(function(m){localIds[m.id]=m;});
+      msgs.forEach(function(m){
+        if(localIds[m.id]){m.read=localIds[m.id].read||[];}
+      });
+      saveMsgsLocal(msgs);
+      if(cb)cb();
+    })
+    .catch(function(){if(cb)cb();});
+}
+
 function doLogin(){
   var u=el('l-u').value.trim().toLowerCase();
   var p=el('l-p').value;
@@ -1730,8 +1622,7 @@ function doLogin(){
   var av=el('t-av');
   av.textContent=U.ini?U.ini:U.name.trim().charAt(0).toUpperCase();
   av.style.background=U.color+'25'; av.style.color=U.color;
-  var _deptObj=DEPTS.find(function(d){return d.id===U.dept;});
-  el('t-badge').textContent=(U.role==='bod')?'BOD':(U.role==='admin'?'ADMIN':(_deptObj?_deptObj.abbr:U.dept));
+  el('t-badge').textContent=(U.role==='bod')?'BOD':(U.role==='admin'?'ADMIN':U.dept);
   el('t-badge').className='tbadge '+(U.role==='dept'?'tba':'tbm');
   el('t-name').textContent=U.name;
   setSyncBadge('loading');
@@ -1843,16 +1734,27 @@ document.addEventListener('DOMContentLoaded',function(){
   el('l-p').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
   el('l-u').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
 
-  // FIX #6: back button wired here
-  // Drill-down modal
-  el('drill-close').addEventListener('click',closeDrillDown);
-  el('drill-overlay').addEventListener('click',function(e){
-    if(e.target===el('drill-overlay'))closeDrillDown();
-  });
-  document.addEventListener('keydown',function(e){
-    if(e.key==='Escape')closeDrillDown();
+  // Drill-down modal close & export
+  el('drill-cls-btn').addEventListener('click',closeDrill);
+  el('drill-ov').addEventListener('click',function(e){if(e.target===el('drill-ov'))closeDrill();});
+  el('drill-exp-btn').addEventListener('click',function(){
+    if(!drillChart)return;
+    var a=document.createElement('a');
+    a.href=drillChart.toBase64Image();
+    a.download=(el('drill-title').textContent||'chart')+'.png';
+    a.click();
   });
 
+  // Chart grid click → drill-down
+  document.body.addEventListener('click',function(e){
+    var cc=e.target.closest('.charts-grid .cc');
+    if(cc&&cc.dataset.chartId){
+      var chart=CH[cc.dataset.chartId];
+      if(chart) openDrill(cc.dataset.chartTitle||'Chart Detail', chart);
+    }
+  });
+
+  // FIX #6: back button wired here
   el('btn-bod-back').addEventListener('click',function(){
     accOpen=null; buildbodLeft(); renderbodRight(null);
   });
@@ -1886,20 +1788,7 @@ document.addEventListener('DOMContentLoaded',function(){
     var t=e.target;
     var btn=t.closest('[data-dept]');
     if(btn&&btn.classList.contains('vc-btn')){bodViewDept(btn.dataset.dept);return;}
-    if(t.classList.contains('vc-btn')&&t.dataset.dept){bodViewDept(t.dataset.dept);return;}
-    // Overview card: click to bodViewDept
-    var ovCard=t.closest('[data-dept-ov]');
-    if(ovCard){bodViewDept(ovCard.dataset.deptOv);return;}
-    // Drill-down: click any .cc card that has data-oc
-    var ccCard=t.closest('.cc');
-    if(ccCard&&ccCard.dataset.oc){
-      try{
-        var oc=JSON.parse(ccCard.dataset.oc);
-        var did=ccCard.dataset.did||deptId;
-        openDrillDown(oc,did);
-      }catch(ex){}
-      return;
-    }
+    if(t.classList.contains('vc-btn')&&t.dataset.dept){bodViewDept(t.dataset.dept);}
   });
   document.body.addEventListener('click',function(e){
     var t=e.target;
