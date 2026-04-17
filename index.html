@@ -189,8 +189,15 @@ button{cursor:pointer}
 #btn-bod-back{padding:6px 14px;border-radius:var(--r);border:1px solid var(--bd2);
   background:var(--sf);color:var(--mu);font-size:12px;white-space:nowrap;margin-top:2px}
 #btn-bod-back:hover{background:var(--sf2);color:var(--tx)}
-.charts-col{display:flex;flex-direction:column;gap:14px}
-.cc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:16px 18px}
+/* 2-column chart grid */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cc-span2{grid-column:1/-1} /* twoBar split cards span full width */
+.cc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--rl);padding:16px 18px;
+  cursor:pointer;transition:border-color .15s,box-shadow .15s;position:relative}
+.cc:hover{border-color:var(--bl);box-shadow:0 2px 12px rgba(18,85,160,.1)}
+.cc-hint{position:absolute;top:10px;right:10px;font-size:10px;color:var(--bl);
+  opacity:0;transition:opacity .15s;background:var(--bl-bg);padding:2px 7px;border-radius:8px;pointer-events:none}
+.cc:hover .cc-hint{opacity:1}
 .cc-t{font-size:13px;font-weight:700;margin-bottom:2px}
 .cc-s{font-size:11px;color:var(--mu);margin-bottom:12px}
 .cc-w{position:relative;height:185px}
@@ -255,6 +262,47 @@ tbody tr:hover td{background:var(--sf2)}
 .cc-total-title{font-size:11px;font-weight:700;color:var(--tx);margin-bottom:1px}
 .cc-total-sub{font-size:10px;color:var(--mu);margin-bottom:6px}
 .cc-total-w{position:relative;height:160px}
+
+/* ── PURPOSE BAR in dept form ── */
+.dept-purpose-bar{font-size:11px;color:var(--mu);font-style:italic;background:var(--sf2);
+  border-left:3px solid var(--bl);padding:5px 9px;border-radius:0 var(--r) var(--r) 0;
+  margin-bottom:10px;line-height:1.4}
+
+/* ── ABBR badge in topbar + sidebar ── */
+.dept-abbr-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;
+  background:var(--bl-bg);color:var(--bl);margin-left:6px;vertical-align:middle}
+
+/* ── DRILL-DOWN MODAL ── */
+.drill-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;
+  display:flex;align-items:center;justify-content:center;padding:20px}
+.drill-modal{background:var(--sf);border-radius:var(--rl);width:100%;max-width:900px;
+  max-height:90vh;display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 24px 64px rgba(0,0,0,.35)}
+.drill-hdr{padding:16px 20px;border-bottom:1px solid var(--bd);
+  display:flex;align-items:flex-start;justify-content:space-between}
+.drill-hdr-info{flex:1}
+.drill-hdr-title{font-size:16px;font-weight:700;margin-bottom:2px}
+.drill-hdr-sub{font-size:11px;color:var(--mu)}
+.drill-close{border:none;background:none;font-size:22px;color:var(--mu);
+  cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0}
+.drill-close:hover{color:var(--tx)}
+.drill-body{flex:1;overflow-y:auto;padding:20px}
+.drill-legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.dl-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--mu)}
+.dl-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.drill-cw{position:relative;height:340px;margin-bottom:14px}
+/* drill split for twoBar */
+.drill-split{display:grid;grid-template-columns:1fr 200px;gap:16px}
+.drill-total-card{background:var(--sf2);border:1px solid var(--bd);border-radius:var(--rl);
+  padding:14px 16px;display:flex;flex-direction:column}
+.dt-title{font-size:13px;font-weight:700;margin-bottom:2px}
+.dt-sub{font-size:10px;color:var(--mu);margin-bottom:10px}
+.dt-cw{position:relative;flex:1;min-height:180px}
+.dt-ratio{text-align:center;font-size:12px;font-weight:700;color:#6366F1;margin-top:8px}
+
+/* ── MSG Google Sheet sync indicator ── */
+.msg-sync-info{font-size:10px;color:var(--hi);text-align:center;padding:4px 14px;
+  border-bottom:1px solid var(--bd)}
 </style>
 </head>
 <body>
@@ -311,6 +359,7 @@ tbody tr:hover td{background:var(--sf2)}
       <div class="msg-hdr-title" id="msg-panel-title">Messages</div>
       <button class="msg-close-btn" id="msg-panel-close-btn">&#x2715;</button>
     </div>
+    <div id="msg-sync-note" style="display:none;font-size:10px;color:var(--am);text-align:center;padding:4px 14px;border-bottom:1px solid var(--bd)"></div>
     <div class="msg-thread" id="msg-thread"></div>
     <div class="msg-compose">
       <textarea class="msg-txt-input" id="msg-txt-input" rows="2" placeholder="Type a message…"></textarea>
@@ -353,214 +402,227 @@ var YRS = [2024, 2025, 2026, 2027];
 // DEPT DEFINITIONS
 // ═══════════════════════════════════════════════
 var DEPTS = [
-  {id:'PROD',  name:'Production',          color:'#378ADD', ini:'PR', mgr:'Prod Manager',
-   purpose:'Deliver boats to plan, on time, with controlled labour.',
+  // ── 1. PRODUCTION ────────────────────────────
+  {id:'PROD', abbr:'PROD', name:'Production',         color:'#378ADD', ini:'RK', mgr:'Rudy Knoesen',
+   purpose:'Deliver boats on time with controlled labour.',
    kpis:[
-     {k:'Plan_Boats',   l:'Plan Boats',    u:'count',t:'i'},
-     {k:'Actual_Boats', l:'Actual Boats',  u:'count',t:'i'},
-     {k:'OnTime_pct',   l:'On-Time %',     u:'%',    t:'p'},
-     {k:'Hours_Planned',l:'Hours Planned', u:'hrs',  t:'i'},
-     {k:'Hours_Actual', l:'Hours Actual',  u:'hrs',  t:'i'},
+     {k:'Schedule_Adh_pct',   l:'Schedule Adherence',       u:'%',   t:'p'},
+     {k:'Labour_vs_Plan_pct', l:'Labour Hours vs Plan',      u:'%',   t:'p'},
+     {k:'Rework_Hours_pct',   l:'Rework Hours',              u:'%',   t:'p'},
+     {k:'Work_Order_Changes', l:'Work Order Changes',        u:'No.', t:'i'},
+     {k:'Boats_Completed',    l:'Boats Completed',           u:'No.', t:'i'},
    ],
    overlayCharts:[
-     {title:'Boats: Plan vs Actual', unit:'count', datasets:[
-       {key:'Plan_Boats',   label:'Plan',    color:'#93C5FD', type:'bar'},
-       {key:'Actual_Boats', label:'Actual',  color:'#1D4ED8', type:'bar'},
+     {title:'Schedule Adherence & Labour vs Plan', unit:'%', datasets:[
+       {key:'Schedule_Adh_pct',   label:'Schedule Adh.',    color:'#93C5FD', type:'line'},
+       {key:'Labour_vs_Plan_pct', label:'Labour vs Plan',   color:'#1D4ED8', type:'line'},
      ]},
-     {title:'Hours: Planned vs Actual', unit:'hrs', datasets:[
-       {key:'Hours_Planned', label:'Planned', color:'#86EFAC', type:'bar'},
-       {key:'Hours_Actual',  label:'Actual',  color:'#16A34A', type:'bar'},
-     ]},
-     {title:'On-Time %', unit:'%', datasets:[
-       {key:'OnTime_pct', label:'On-Time %', color:'#F59E0B', type:'line'},
-     ]},
+     {title:'Boats Completed',     unit:'No.', datasets:[{key:'Boats_Completed',    label:'Boats Completed',    color:'#3B82F6', type:'bar'}]},
+     {title:'Work Order Changes',  unit:'No.', datasets:[{key:'Work_Order_Changes', label:'WO Changes',         color:'#EF4444', type:'line'}]},
+     {title:'Rework Hours %',      unit:'%',   datasets:[{key:'Rework_Hours_pct',   label:'Rework Hours %',     color:'#F59E0B', type:'line'}]},
    ]},
-  {id:'SALES', name:'Sales',               color:'#1D9E75', ini:'SA', mgr:'Sales Manager',
-   purpose:'Order intake quality and predictability.',
+
+  // ── 2. QUALITY ASSURANCE ──────────────────────
+  {id:'QA', abbr:'QA', name:'Quality Assurance',  color:'#D4537E', ini:'DA', mgr:'Mr Duy Anh',
+   purpose:'Ensure first-time quality.',
    kpis:[
-     {k:'Orders_Booked_USD',l:'Orders Booked',u:'USD',t:'c'},
-     {k:'Target_USD',       l:'Target',        u:'USD',t:'c'},
-     {k:'Dealer_Perf_Score',l:'Dealer Score',  u:'pts',t:'p'},
-     {k:'Conversion_pct',   l:'Conversion %',  u:'%',  t:'p'},
-     {k:'Pipeline_3mo_USD', l:'Pipeline 3mo',  u:'USD',t:'c'},
+     {k:'FirstTimePass_pct', l:'First Time Pass',      u:'%',    t:'p'},
+     {k:'QA_Defects_Logged', l:'QA Defects Logged',    u:'No.',  t:'i'},
+     {k:'Defects_A',         l:'Defects Severity A',   u:'No.',  t:'i'},
+     {k:'Defects_B',         l:'Defects Severity B',   u:'No.',  t:'i'},
+     {k:'Defects_C',         l:'Defects Severity C',   u:'No.',  t:'i'},
+     {k:'Avg_Closeout_Days', l:'Avg Close-out Time',   u:'Days', t:'p'},
    ],
    overlayCharts:[
-     {title:'Orders Booked vs Target', unit:'USD', datasets:[
-       {key:'Target_USD',        label:'Target',        color:'#86EFAC', type:'bar'},
-       {key:'Orders_Booked_USD', label:'Orders Booked', color:'#1D9E75', type:'bar'},
+     {title:'First Time Pass %',           unit:'%',    datasets:[{key:'FirstTimePass_pct', label:'FTP %',          color:'#D4537E', type:'line'}]},
+     {title:'Defects by Severity (A/B/C)', unit:'No.',  datasets:[
+       {key:'Defects_A', label:'Severity A', color:'#EF4444', type:'bar'},
+       {key:'Defects_B', label:'Severity B', color:'#F97316', type:'bar'},
+       {key:'Defects_C', label:'Severity C', color:'#FCD34D', type:'bar'},
      ]},
-     {title:'Conversion %', unit:'%', datasets:[
-       {key:'Conversion_pct', label:'Conversion %', color:'#34D399', type:'line'},
-     ]},
-     {title:'Dealer Performance Score', unit:'pts', datasets:[
-       {key:'Dealer_Perf_Score', label:'Dealer Score', color:'#059669', type:'line'},
-     ]},
-     {title:'Pipeline 3-Month', unit:'USD', datasets:[
-       {key:'Pipeline_3mo_USD', label:'Pipeline', color:'#6EE7B7', type:'line'},
-     ]},
+     {title:'QA Defects Logged',   unit:'No.',  datasets:[{key:'QA_Defects_Logged', label:'Defects Logged',  color:'#F43F5E', type:'line'}]},
+     {title:'Avg Close-out Time',  unit:'Days', datasets:[{key:'Avg_Closeout_Days', label:'Close-out Days',  color:'#BE185D', type:'line'}]},
    ]},
-  {id:'QA',    name:'Quality Assurance',   color:'#D4537E', ini:'QA', mgr:'QA Manager',
-   purpose:'Gatekeeper of first-time quality.',
+
+  // ── 3. DESIGN & TECHNICAL ─────────────────────
+  {id:'DT', abbr:'D&T', name:'Design & Technical', color:'#8B5CF6', ini:'JM', mgr:'James',
+   purpose:'Stable design and BOM.',
    kpis:[
-     {k:'FirstTimePass_pct',   l:'First Time Pass %',u:'%',t:'p'},
-     {k:'Factory_Defects_pct', l:'Factory Defects %',u:'%',t:'p'},
-     {k:'Warranty_Linked_pct', l:'Warranty Linked %',u:'%',t:'p'},
-     {k:'Doc_Control_pct',     l:'Doc Control %',    u:'%',t:'p'},
+     {k:'BOM_Errors',          l:'BOM Errors Identified', u:'No.', t:'i'},
+     {k:'Production_RFIs',     l:'Production RFIs',       u:'No.', t:'i'},
+     {k:'Late_Design_Changes', l:'Late Design Changes',   u:'No.', t:'i'},
    ]},
-  {id:'FIN',   name:'Finance',             color:'#EF9F27', ini:'FN', mgr:'Finance Manager',
-   purpose:'Cash, margin, and discipline.',
+
+  // ── 4. PROJECT DEVELOPMENT ───────────────────
+  {id:'PD', abbr:'PD', name:'Project Development', color:'#14B8A6', ini:'PL', mgr:'Project Lead',
+   purpose:'Controlled implementation of change.',
    kpis:[
-     {k:'Revenue_USD',              l:'Revenue',          u:'USD',t:'c'},
-     {k:'Budget_USD',               l:'Budget',           u:'USD',t:'c'},
-     {k:'Gross_Margin_pct',         l:'Gross Margin %',   u:'%',  t:'p'},
-     {k:'Cash_Balance_USD',         l:'Cash Balance',     u:'USD',t:'c'},
-     {k:'Cash_Coverage_Months',     l:'Cash Coverage',    u:'mo', t:'p'},
-     {k:'AR_Over_90d_USD',          l:'AR >90 days',      u:'USD',t:'c'},
-     {k:'Backlog_USD',              l:'Backlog',          u:'USD',t:'c'},
-     {k:'Forecast_3mo_Revenue_USD', l:'Forecast 3mo Rev', u:'USD',t:'c'},
+     {k:'Active_Projects',         l:'Active Projects',         u:'No.', t:'i'},
+     {k:'Projects_OnTrack_pct',    l:'Projects On-Track',       u:'%',   t:'p'},
+     {k:'Design_Changes_Released', l:'Design Changes Released', u:'No.', t:'i'},
    ],
    overlayCharts:[
-     {title:'Revenue vs Budget', unit:'USD', datasets:[
-       {key:'Budget_USD',  label:'Budget',  color:'#FCD34D', type:'bar'},
-       {key:'Revenue_USD', label:'Revenue', color:'#EF9F27', type:'bar'},
+     {title:'Active Projects & On-Track %', unit:'', datasets:[
+       {key:'Active_Projects',      label:'Active Projects', color:'#5EEAD4', type:'bar'},
+       {key:'Projects_OnTrack_pct', label:'On-Track %',      color:'#0D9488', type:'line'},
      ]},
-     {title:'Gross Margin % & Cash Coverage', unit:'', datasets:[
-       {key:'Gross_Margin_pct',     label:'Gross Margin %',    color:'#F59E0B', type:'line'},
-       {key:'Cash_Coverage_Months', label:'Cash Coverage (mo)',color:'#D97706', type:'line'},
-     ]},
-     {title:'AR >90d & Cash Balance', unit:'USD', datasets:[
-       {key:'Cash_Balance_USD', label:'Cash Balance', color:'#FCD34D', type:'bar'},
-       {key:'AR_Over_90d_USD',  label:'AR >90d',      color:'#EF4444', type:'line'},
-     ]},
+     {title:'Design Changes Released', unit:'No.', datasets:[{key:'Design_Changes_Released', label:'Changes Released', color:'#14B8A6', type:'line'}]},
    ]},
-  {id:'SC',   name:'Supply Chain',        color:'#D85A30', ini:'SC', mgr:'SC Manager',
-   purpose:'Material availability without excess cash burn.',
+
+  // ── 5. SUPPLY CHAIN ──────────────────────────
+  {id:'SCM', abbr:'SCM', name:'Supply Chain',      color:'#D85A30', ini:'ML', mgr:'Mr Loc',
+   purpose:'Material availability to production.',
    kpis:[
-     {k:'OTIF_Customer_pct',   l:'OTIF Customer %',   u:'%',  t:'p'},
-     {k:'OnTime_Supplier_pct', l:'On-Time Supplier %',u:'%',  t:'p'},
-     {k:'PR_Turnaround_Days',  l:'PR Turnaround',     u:'days',t:'p'},
-     {k:'Critical_Stockouts',  l:'Critical Stockouts',u:'cnt',t:'i'},
-     {k:'Inventory_Value_USD', l:'Inventory Value',   u:'USD',t:'c'},
-     {k:'Slow_Moving_USD',     l:'Slow Moving Inv.',  u:'USD',t:'c'},
+     {k:'OTIF_pct',              l:'OTIF to Production',           u:'%',   t:'p'},
+     {k:'Material_Shortages',    l:'Material Shortages',           u:'No.', t:'i'},
+     {k:'Expedited_Freight_USD', l:'Expedited Freight Cost',       u:'USD', t:'c'},
    ]},
-  {id:'HR',    name:'Human Resources',     color:'#7F77DD', ini:'HR', mgr:'HR Manager',
-   purpose:'Stability and capability.',
+
+  // ── 6. CID ────────────────────────────────────
+  {id:'CID', abbr:'CID', name:'CID',               color:'#6366F1', ini:'CI', mgr:'CID Lead',
+   purpose:'Drive measurable improvement.',
    kpis:[
-     {k:'Headcount',     l:'Headcount',     u:'ppl',t:'i'},
-     {k:'Turnover_pct',  l:'Turnover %',    u:'%',  t:'p'},
-     {k:'Overtime_Hours',l:'Overtime Hours',u:'hrs',t:'i'},
-     {k:'Training_Hours',l:'Training Hours',u:'hrs',t:'i'},
-     {k:'LTI_Count',     l:'LTI Count',     u:'cnt',t:'i'},
-     {k:'Hours_Worked',  l:'Hours Worked',  u:'hrs',t:'i'},
-   ]},
-  {id:'CS',    name:'Customer Service',    color:'#0891B2', ini:'CS', mgr:'CS Manager',
-   purpose:'Warranty containment and customer confidence.',
-   kpis:[
-     {k:'Claims_Opened',    l:'Claims Opened',    u:'cnt', t:'i'},
-     {k:'Claims_Closed',    l:'Claims Closed',    u:'cnt', t:'i'},
-     {k:'Avg_Closure_Days', l:'Avg Closure Days', u:'days',t:'p'},
-     {k:'Customer_Sat_pct', l:'Customer Sat %',   u:'%',   t:'p'},
-     {k:'Major_Escalations',l:'Major Escalations',u:'cnt', t:'i'},
+     {k:'CID_Actions_Open',      l:'CID Actions Open',    u:'No.',  t:'i'},
+     {k:'CID_Actions_Closed',    l:'CID Actions Closed',  u:'No.',  t:'i'},
+     {k:'CID_Avg_Closeout_Days', l:'Avg Close-out Time',  u:'Days', t:'p'},
    ],
    overlayCharts:[
-     {title:'Claims Opened vs Closed', unit:'count', datasets:[
-       {key:'Claims_Opened', label:'Opened', color:'#F87171', type:'bar'},
-       {key:'Claims_Closed', label:'Closed', color:'#0891B2', type:'bar'},
+     {title:'CID Actions: Open vs Closed', unit:'No.', datasets:[
+       {key:'CID_Actions_Open',   label:'Open',   color:'#A5B4FC', type:'bar'},
+       {key:'CID_Actions_Closed', label:'Closed', color:'#6366F1', type:'bar'},
      ]},
-     {title:'Customer Satisfaction %', unit:'%', datasets:[
-       {key:'Customer_Sat_pct', label:'Sat %', color:'#06B6D4', type:'line'},
-     ]},
-     {title:'Avg Closure Days', unit:'days', datasets:[
-       {key:'Avg_Closure_Days', label:'Days', color:'#0E7490', type:'line'},
-     ]},
+     {title:'Avg Close-out Time', unit:'Days', datasets:[{key:'CID_Avg_Closeout_Days', label:'Days', color:'#818CF8', type:'line'}]},
    ]},
-  {id:'DESIGN',name:'Design & Technical',  color:'#8B5CF6', ini:'DT', mgr:'TECH Manager',
-   purpose:'Correct drawings, correct BOMs, minimal disruption.',
+
+  // ── 7. THAILAND HANDOVER ──────────────────────
+  {id:'TH', abbr:'TH', name:'Thailand Handover',  color:'#F97316', ini:'PH', mgr:'Phil Harper',
+   purpose:'Clean delivery and handover.',
    kpis:[
-     {k:'BOM_Accuracy_pct',                l:'BOM Accuracy %',   u:'%',t:'p'},
-     {k:'Drawings_Issued_vs_Required_pct', l:'Drawings Issued %',u:'%',t:'p'},
-     {k:'CRs_Closed_pct',                  l:'CRs Closed %',     u:'%',t:'p'},
-   ]},
-  {id:'IT',    name:'IT',                  color:'#475569', ini:'IT', mgr:'IT Manager',
-   purpose:'System reliability and security.',
-   kpis:[
-     {k:'Uptime_pct',             l:'System Uptime %',u:'%', t:'p'},
-     {k:'Cyber_Incidents',        l:'Cyber Incidents',u:'cnt',t:'i'},
-     {k:'Tickets_Closed_SLA_pct', l:'Tickets SLA %',  u:'%', t:'p'},
-   ]},
-  {id:'MKTG',  name:'Marketing',           color:'#EC4899', ini:'MK', mgr:'Marketing Manager',
-   purpose:'Lead generation efficiency.',
-   kpis:[
-     {k:'Engagement_Growth_pct', l:'Engagement Growth %',u:'%',  t:'p'},
-     {k:'Leads_Generated',       l:'Leads Generated',    u:'cnt',t:'i'},
-     {k:'Campaigns_Active',      l:'Campaigns Active',   u:'cnt',t:'i'},
-   ]},
-  {id:'PD',    name:'Project Development', color:'#14B8A6', ini:'PD', mgr:'Project Dev Lead',
-   purpose:'Product improvement and controlled change.',
-   kpis:[
-     {k:'StageGate_OnTime_pct',  l:'Stage Gate On-Time %',u:'%',  t:'p'},
-     {k:'Gate_Slip_Cases',       l:'Gate Slip Cases',     u:'cnt',t:'i'},
-     {k:'ECN_LeadTime_Days',     l:'ECN Lead Time',       u:'days',t:'p'},
-     {k:'Readiness_to_Build_pct',l:'Readiness to Build %',u:'%',  t:'p'},
-   ]},
-  {id:'PROP',  name:'Property',            color:'#84CC16', ini:'PP', mgr:'Property Manager',
-   purpose:'Facility compliance and maintenance.',
-   kpis:[
-     {k:'Maint_Backlog_Count',l:'Maint Backlog',     u:'cnt',t:'i'},
-     {k:'Fire_OHS_Comp_pct',  l:'Fire/OHS Comp %',  u:'%',  t:'p'},
-     {k:'Security_Incidents', l:'Security Incidents',u:'cnt',t:'i'},
-   ]},
-  {id:'TL',    name:'TL Handover',         color:'#F97316', ini:'TL', mgr:'HandOver Manager',
-   purpose:'Clean handover and brand experience.',
-   kpis:[
-     {k:'Comm_Hours_Planned',   l:'Comm Hrs Planned', u:'hrs',t:'i'},
-     {k:'Comm_Hours_Actual',    l:'Comm Hrs Actual',  u:'hrs',t:'i'},
-     {k:'Handover_OnTime_pct',  l:'Handover On-Time %',u:'%', t:'p'},
-     {k:'Post_Handover_Defects',l:'Post-HO Defects',  u:'cnt',t:'i'},
+     {k:'Handovers_Completed', l:'Handovers Completed',            u:'No.', t:'i'},
+     {k:'Delivery_OnTime_pct', l:'Delivery to Planned Date',       u:'%',   t:'p'},
+     {k:'Defects_at_Handover', l:'Defects at Handover',            u:'No.', t:'i'},
+     {k:'Outstanding_Issues',  l:'Outstanding Issues at Delivery', u:'No.', t:'i'},
    ],
    overlayCharts:[
-     {title:'Commission Hours: Planned vs Actual', unit:'hrs', datasets:[
-       {key:'Comm_Hours_Planned', label:'Planned', color:'#FDBA74', type:'bar'},
-       {key:'Comm_Hours_Actual',  label:'Actual',  color:'#F97316', type:'bar'},
+     {title:'Handovers & On-Time %', unit:'', datasets:[
+       {key:'Handovers_Completed', label:'Handovers', color:'#FDBA74', type:'bar'},
+       {key:'Delivery_OnTime_pct', label:'On-Time %', color:'#F97316', type:'line'},
      ]},
-     {title:'Handover On-Time % & Post-HO Defects', unit:'', datasets:[
-       {key:'Handover_OnTime_pct',  label:'On-Time %',  color:'#FB923C', type:'line'},
-       {key:'Post_Handover_Defects',label:'Defects',    color:'#EF4444', type:'line'},
+     {title:'Defects & Outstanding Issues', unit:'No.', datasets:[
+       {key:'Defects_at_Handover', label:'Defects at HO',  color:'#EF4444', type:'line'},
+       {key:'Outstanding_Issues',  label:'Outstanding',    color:'#FB923C', type:'line'},
      ]},
    ]},
-  {id:'CID',   name:'CID',                 color:'#6366F1', ini:'CI', mgr:'CID Lead',
-   purpose:'Structural improvement, not firefighting.',
+
+  // ── 8. SALES ─────────────────────────────────
+  {id:'SALES', abbr:'SALES', name:'Sales',         color:'#1D9E75', ini:'MI', mgr:'Mike',
+   purpose:'Order intake and pipeline visibility.',
    kpis:[
-     {k:'CRs_Raised',        l:'CRs Raised',      u:'cnt',t:'i'},
-     {k:'CRs_Closed_CID',    l:'CRs Closed',      u:'cnt',t:'i'},
-     {k:'Savings_USD',       l:'Savings',          u:'USD',t:'c'},
-     {k:'ISO_Compliance_pct',l:'ISO Compliance %', u:'%',  t:'p'},
+     {k:'Orders_Booked_USD',  l:'Orders Booked',               u:'USD', t:'c'},
+     {k:'Units_Sold',         l:'Units Sold',                  u:'No.', t:'i'},
+     {k:'Order_Changes',      l:'Order Changes Post-Contract', u:'No.', t:'i'},
+     {k:'Sales_Pipeline_USD', l:'Sales Pipeline',              u:'USD', t:'c'},
    ],
    overlayCharts:[
-     {title:'CRs Raised vs Closed', unit:'count', datasets:[
-       {key:'CRs_Raised',     label:'Raised', color:'#A5B4FC', type:'bar'},
-       {key:'CRs_Closed_CID', label:'Closed', color:'#6366F1', type:'bar'},
+     {title:'Orders Booked & Pipeline', unit:'USD', datasets:[
+       {key:'Orders_Booked_USD',  label:'Orders Booked',  color:'#1D9E75', type:'bar'},
+       {key:'Sales_Pipeline_USD', label:'Sales Pipeline', color:'#86EFAC', type:'line'},
      ]},
+     {title:'Units Sold',    unit:'No.', datasets:[{key:'Units_Sold',    label:'Units Sold',      color:'#34D399', type:'bar'}]},
+     {title:'Order Changes', unit:'No.', datasets:[{key:'Order_Changes', label:'Post-Contract Chg',color:'#EF4444', type:'line'}]},
+   ]},
+
+  // ── 9. MARKETING ─────────────────────────────
+  {id:'MKTG', abbr:'MKTG', name:'Marketing',       color:'#EC4899', ini:'NP', mgr:'Nhi Pham',
+   purpose:'Lead generation effectiveness.',
+   kpis:[
+     {k:'Qualified_Leads',     l:'Qualified Leads',  u:'No.', t:'i'},
+     {k:'Cost_per_Lead_USD',   l:'Cost per Lead',    u:'USD', t:'c'},
+     {k:'Conversion_Rate_pct', l:'Conversion Rate',  u:'%',   t:'p'},
+     {k:'Campaigns_Active',    l:'Campaigns Active', u:'No.', t:'i'},
+   ]},
+
+  // ── 10. CUSTOMER SERVICE ─────────────────────
+  {id:'CS', abbr:'CS', name:'Customer Service',    color:'#0891B2', ini:'VN', mgr:'Van Nguyen',
+   purpose:'Warranty control and resolution.',
+   kpis:[
+     {k:'Claims_Open',     l:'Warranty Claims Open', u:'No.',  t:'i'},
+     {k:'New_Claims',      l:'New Claims',           u:'No.',  t:'i'},
+     {k:'Avg_Closeout_CS', l:'Avg Close-out Time',   u:'Days', t:'p'},
+     {k:'Repeat_Issues',   l:'Repeat Issues',        u:'No.',  t:'i'},
+   ],
+   overlayCharts:[
+     {title:'Claims Open vs New Claims', unit:'No.', datasets:[
+       {key:'Claims_Open', label:'Claims Open', color:'#F87171', type:'bar'},
+       {key:'New_Claims',  label:'New Claims',  color:'#0891B2', type:'bar'},
+     ]},
+     {title:'Avg Close-out Time', unit:'Days', datasets:[{key:'Avg_Closeout_CS', label:'Close-out Days', color:'#06B6D4', type:'line'}]},
+     {title:'Repeat Issues',      unit:'No.',  datasets:[{key:'Repeat_Issues',   label:'Repeat Issues',  color:'#0E7490', type:'line'}]},
+   ]},
+
+  // ── 11. FINANCE ──────────────────────────────
+  {id:'FIN', abbr:'FIN', name:'Finance',           color:'#EF9F27', ini:'MD', mgr:'Mr Dung',
+   purpose:'Cash and margin control.',
+   kpis:[
+     {k:'Operating_CF_USD',    l:'Operating Cash Flow',       u:'USD', t:'c'},
+     {k:'Gross_Margin_pct',    l:'Gross Margin',              u:'%',   t:'p'},
+     {k:'AR_Over_60d_USD',     l:'Aged Receivables >60 Days', u:'USD', t:'c'},
+     {k:'Inventory_Value_USD', l:'Inventory Value',           u:'USD', t:'c'},
+   ],
+   overlayCharts:[
+     {title:'Operating Cash Flow',                unit:'USD', datasets:[{key:'Operating_CF_USD',    label:'Cash Flow', color:'#EF9F27', type:'bar'}]},
+     {title:'Gross Margin %',                     unit:'%',   datasets:[{key:'Gross_Margin_pct',    label:'Margin %',  color:'#F59E0B', type:'line'}]},
+     {title:'Aged Receivables >60d & Inventory',  unit:'USD', datasets:[
+       {key:'AR_Over_60d_USD',     label:'AR >60d',   color:'#EF4444', type:'bar'},
+       {key:'Inventory_Value_USD', label:'Inventory', color:'#FCD34D', type:'line'},
+     ]},
+   ]},
+
+  // ── 12. HUMAN RESOURCES ──────────────────────
+  {id:'HR', abbr:'HR', name:'Human Resources',     color:'#7F77DD', ini:'MC', mgr:'Ms Chau',
+   purpose:'Workforce stability.',
+   kpis:[
+     {k:'Headcount_vs_Plan',  l:'Headcount vs Plan', u:'No.', t:'i'},
+     {k:'Staff_Turnover_pct', l:'Staff Turnover',    u:'%',   t:'p'},
+     {k:'Absenteeism_pct',    l:'Absenteeism',       u:'%',   t:'p'},
+     {k:'Overtime_pct',       l:'Overtime',          u:'%',   t:'p'},
+   ],
+   overlayCharts:[
+     {title:'Turnover / Absenteeism / Overtime', unit:'%', datasets:[
+       {key:'Staff_Turnover_pct', label:'Turnover',    color:'#7F77DD', type:'line'},
+       {key:'Absenteeism_pct',    label:'Absenteeism', color:'#A78BFA', type:'line'},
+       {key:'Overtime_pct',       label:'Overtime',    color:'#DDD6FE', type:'line'},
+     ]},
+     {title:'Headcount vs Plan', unit:'No.', datasets:[{key:'Headcount_vs_Plan', label:'Headcount', color:'#6D28D9', type:'bar'}]},
+   ]},
+
+  // ── 13. HSE ───────────────────────────────────
+  {id:'HSE', abbr:'HSE', name:'HSE',               color:'#639922', ini:'MP', mgr:'Mr Phong',
+   purpose:'Safe operations and compliance.',
+   kpis:[
+     {k:'TRIR',                    l:'TRIR',                      u:'Rate', t:'p'},
+     {k:'LTIFR',                   l:'LTIFR',                     u:'Rate', t:'p'},
+     {k:'Near_Miss_Reports',       l:'Near Miss Reports',         u:'No.',  t:'i'},
+     {k:'HighRisk_Compliance_pct', l:'High-Risk Work Compliance', u:'%',    t:'p'},
    ]},
 ];
 
 var USERS = {
-  bod:         {role:'bod',  name:'BOD Name',                    ini:'',color:'#EF9F27',pass:'bod123'},
-  admin:       {role:'admin',name:'System Admin',                ini:'',color:'#374151',pass:'admin123'},
-  production:  {role:'dept', dept:'PROD',  name:'Produciton Manager Name', ini:'',color:'#378ADD',pass:'production123'},
-  sales:       {role:'dept', dept:'SALES', name:'Sales Manager Name',      ini:'',color:'#1D9E75',pass:'sales123'},
-  qa:          {role:'dept', dept:'QA',    name:'QA Manager Name',         ini:'',color:'#D4537E',pass:'qa123'},
-  finance:     {role:'dept', dept:'FIN',   name:'Finance Manager Name',    ini:'',color:'#EF9F27',pass:'finance123'},
-  sc:          {role:'dept', dept:'SC',    name:'SC Manager Name',         ini:'',color:'#D85A30',pass:'sc123'},
-  hr:          {role:'dept', dept:'HR',    name:'HR Manager Name',         ini:'',color:'#7F77DD',pass:'hr123'},
-  cs:          {role:'dept', dept:'CS',    name:'CS Manager Name',         ini:'',color:'#0891B2',pass:'cs123'},
-  design:      {role:'dept', dept:'DESIGN',name:'TECH Manager Name',       ini:'',color:'#8B5CF6',pass:'design123'},
-  it:          {role:'dept', dept:'IT',    name:'IT Manager Name',         ini:'',color:'#475569',pass:'it123'},
-  marketing:   {role:'dept', dept:'MKTG',  name:'Marketing Manager Name',  ini:'',color:'#EC4899',pass:'marketing123'},
-  project_dev: {role:'dept', dept:'PD',    name:'Project Dev Lead Name',   ini:'',color:'#14B8A6',pass:'project_dev123'},
-  property:    {role:'dept', dept:'PROP',  name:'Property Manager Name',   ini:'',color:'#84CC16',pass:'property123'},
-  tl_handover: {role:'dept', dept:'TL',    name:'HandOver Manager Name',   ini:'',color:'#F97316',pass:'tl_handover123'},
-  cid:         {role:'dept', dept:'CID',   name:'CID Lead Name',           ini:'',color:'#6366F1',pass:'cid123'},
+  bod:          {role:'bod',   name:'BOD Name',          ini:'',  color:'#EF9F27',pass:'bod123'},
+  admin:        {role:'admin', name:'System Admin',       ini:'',  color:'#374151',pass:'admin123'},
+  production:   {role:'dept',  dept:'PROD',  name:'Rudy Knoesen',  ini:'RK', color:'#378ADD',pass:'production123'},
+  qa:           {role:'dept',  dept:'QA',    name:'Mr Duy Anh',    ini:'DA', color:'#D4537E',pass:'qa123'},
+  design:       {role:'dept',  dept:'DT',    name:'James',         ini:'JM', color:'#8B5CF6',pass:'design123'},
+  project_dev:  {role:'dept',  dept:'PD',    name:'Project Lead',  ini:'PL', color:'#14B8A6',pass:'project_dev123'},
+  sc:           {role:'dept',  dept:'SCM',   name:'Mr Loc',        ini:'ML', color:'#D85A30',pass:'sc123'},
+  cid:          {role:'dept',  dept:'CID',   name:'CID Lead',      ini:'CI', color:'#6366F1',pass:'cid123'},
+  th_handover:  {role:'dept',  dept:'TH',    name:'Phil Harper',   ini:'PH', color:'#F97316',pass:'th_handover123'},
+  sales:        {role:'dept',  dept:'SALES', name:'Mike',          ini:'MI', color:'#1D9E75',pass:'sales123'},
+  marketing:    {role:'dept',  dept:'MKTG',  name:'Nhi Pham',      ini:'NP', color:'#EC4899',pass:'marketing123'},
+  cs:           {role:'dept',  dept:'CS',    name:'Van Nguyen',    ini:'VN', color:'#0891B2',pass:'cs123'},
+  finance:      {role:'dept',  dept:'FIN',   name:'Mr Dung',       ini:'MD', color:'#EF9F27',pass:'finance123'},
+  hr:           {role:'dept',  dept:'HR',    name:'Ms Chau',       ini:'MC', color:'#7F77DD',pass:'hr123'},
+  hse:          {role:'dept',  dept:'HSE',   name:'Mr Phong',      ini:'MP', color:'#639922',pass:'hse123'},
 };
 
 // ═══════════════════════════════════════════════
@@ -745,7 +807,8 @@ function buildDeptLeft(){
     +'<div class="inp-st">'
     +'<span style="font-size:11px;color:var(--mu);font-weight:500">Status</span>'
     +'<span class="badge '+(saved?'bg':'ba')+'" id="st-badge">'+(saved?'Submitted':'Pending')+'</span></div>'
-    +'<div class="lsec">'+dept.name+' — '+MN[selM]+' '+selY+'</div>'
+    +'<div class="dept-purpose-bar">'+dept.purpose+'</div>'
+    +'<div class="lsec">'+dept.name+' <span class="dept-abbr-badge">'+dept.abbr+'</span> — '+MN[selM]+' '+selY+'</div>'
     +'<div class="ki-list">'+inputs+'</div>'
     +'<div class="ki" style="margin-bottom:13px">'
     +'<label>Comment</label>'
@@ -864,14 +927,14 @@ function saveDept(){
 // ═══════════════════════════════════════════════
 function renderDeptRight(){
   var dept=DEPTS.find(function(d){return d.id===deptId;});
-  el('rp-title').textContent=dept.name;
-  el('rp-sub').textContent=dept.purpose;
+  el('rp-title').innerHTML=dept.name+' <span class="dept-abbr-badge">'+dept.abbr+'</span>';
+  el('rp-sub').textContent=dept.mgr+' · '+dept.purpose;
   el('btn-bod-back').classList.add('hidden');
   var mw=el('rp-msg-btn-wrap');
   if(mw){var ud=getDeptUnreadBadge(deptId);mw.innerHTML='<button class="msg-action-btn" id="rp-open-msg" data-dept="'+deptId+'">&#x1F4AC; Messages'+ud+'</button>';}
   var range=buildRange(deptId);
   killCharts('d_');
-  el('rp-body').innerHTML='<div class="charts-col" id="d-col"></div>';
+  el('rp-body').innerHTML='<div class="charts-grid" id="d-col"></div>';
   var col=el('d-col');
   if(dept.overlayCharts){
     dept.overlayCharts.forEach(function(oc,i){
@@ -882,7 +945,9 @@ function renderDeptRight(){
       var vals=range.dkeys.map(function(dk){return getGSVal(deptId,dk.y,dk.m,kpi.k);});
       var cid='d_'+i;
       var div=document.createElement('div');div.className='cc';
-      div.innerHTML='<div class="cc-t">'+kpi.l+'</div>'
+      try{div.dataset.oc=JSON.stringify({title:kpi.l,unit:kpi.u,datasets:[{key:kpi.k,label:kpi.l,color:dept.color,type:'line'}]});}catch(e){}
+      div.dataset.did=deptId||id;
+      div.innerHTML='<div class="cc-hint">🔍 Drill down</div><div class="cc-t">'+kpi.l+'</div>'
         +'<div class="cc-s">'+kpi.u+' · '+rangeLabel(range)+'</div>'
         +'<div class="cc-w"><canvas id="'+cid+'"></canvas></div>';
       col.appendChild(div);
@@ -900,9 +965,13 @@ function renderOverlayChart(col, cid, oc, range, did){
   var isTwoBarCheck=oc.datasets.length===2&&oc.datasets[0].type==='bar'&&oc.datasets[1].type==='bar';
   // Outer wrapper: for twoBar charts use split layout (monthly | total)
   var wrapper=document.createElement('div');
-  wrapper.className='cc';
+  // twoBar split cards span both columns; others are single-column cards
+  wrapper.className='cc'+(isTwoBarCheck?' cc-span2':'');
+  // Store serialized oc for drill-down (strip circular refs)
+  try{wrapper.dataset.oc=JSON.stringify(oc);}catch(e){}
+  wrapper.dataset.did=did;
   if(isTwoBarCheck){
-    wrapper.innerHTML='<div class="cc-t">'+oc.title+'</div>'
+    wrapper.innerHTML='<div class="cc-hint">🔍 Drill down</div><div class="cc-t">'+oc.title+'</div>'
       +'<div class="cc-s">'+rangeLabel(range)+'</div>'
       +legendHtml
       +'<div class="cc-split">'
@@ -913,7 +982,7 @@ function renderOverlayChart(col, cid, oc, range, did){
       +'<div class="cc-total-w"><canvas id="'+cid+'-tot"></canvas></div>'
       +'</div></div>';
   } else {
-    wrapper.innerHTML='<div class="cc-t">'+oc.title+'</div>'
+    wrapper.innerHTML='<div class="cc-hint">🔍 Drill down</div><div class="cc-t">'+oc.title+'</div>'
       +'<div class="cc-s">'+rangeLabel(range)+'</div>'
       +legendHtml
       +'<div class="cc-w'+(isMulti?' tall':'')+'"><canvas id="'+cid+'"></canvas></div>';
@@ -1052,7 +1121,7 @@ function buildbodLeft(){
       +'<div class="acc-h'+(open?' open':'')+'" data-dept="'+d.id+'">'
       +'<span class="ah-dot" style="background:'+d.color+'"></span>'
       +'<div class="ah-info">'
-      +'<div class="ah-name">'+d.name+'</div>'
+      +'<div class="ah-name">'+d.name+' <span class="dept-abbr-badge">'+d.abbr+'</span>'+(getDeptUnreadBadge(d.id))+'</div>'
       +'<div class="ah-last '+lastClass+'">'+lastLabel+'</div>'
       +'</div>'
       +'<span class="ah-st '+(hasRow?'st-ok':'st-pend')+'"></span>'
@@ -1104,7 +1173,8 @@ function buildAccBody(dept){
       +'</div>';
   }).join('');
   var cmt=row?getGSVal(dept.id,curY,curM0,'comment')||'':'';
-  return '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--hi);margin-bottom:6px">Snapshot — '+MN[curM0]+' '+curY+'</div>'
+  return '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--hi);margin-bottom:4px">Snapshot — '+MN[curM0]+' '+curY+'</div>'
+    +'<div style="font-size:10px;color:var(--mu);font-style:italic;margin-bottom:6px;border-left:2px solid var(--bl);padding-left:6px">'+dept.purpose+'</div>'
     +'<div>'+rows+'</div>'
     +(cmt?'<div class="ks-cmt">'+cmt+'</div>':'')
     +'<button class="vc-btn" data-dept="'+dept.id+'">View all charts →</button>';
@@ -1177,7 +1247,7 @@ function renderbodRight(id){
       return '<tr>'
         +'<td><span style="display:inline-flex;align-items:center;gap:6px">'
         +'<span style="width:7px;height:7px;border-radius:50%;background:'+d.color+';display:inline-block"></span>'
-        +d.name+'</span></td>'
+        +d.name+' <span class="dept-abbr-badge">'+d.abbr+'</span></span></td>'
         +'<td style="color:var(--mu)">'+d.mgr+'</td>'
         +'<td><span class="badge '+badgeCls+'" style="'+badgeStyle+'">'+badgeTxt+'</span></td>'
         +'<td style="color:var(--mu);font-size:11px">'+ts+'</td>'
@@ -1185,10 +1255,11 @@ function renderbodRight(id){
         +'</tr>';
     }).join('');
     var ovCharts=DEPTS.map(function(d,i){
-      return '<div class="cc">'
+      return '<div class="cc" data-dept-ov="'+d.id+'" title="Click to view '+d.name+' charts">'
+        +'<div class="cc-hint">🔍 View charts</div>'
         +'<div class="cc-t" style="display:flex;align-items:center;gap:6px">'
         +'<span style="width:8px;height:8px;border-radius:50%;background:'+d.color+';display:inline-block;flex-shrink:0"></span>'
-        +d.name+' — '+d.kpis[0].l+'</div>'
+        +d.name+' <span class="dept-abbr-badge">'+d.abbr+'</span> — '+d.kpis[0].l+'</div>'
         +'<div class="cc-s">'+d.kpis[0].u+'</div>'
         +'<div class="cc-w"><canvas id="b_ov_'+i+'"></canvas></div></div>';
     }).join('');
@@ -1197,7 +1268,7 @@ function renderbodRight(id){
       +'<span style="font-size:11px;font-weight:400;color:var(--mu)">'+subm+'/'+DEPTS.length+' submitted</span></div>'
       +'<table><thead><tr><th>Department</th><th>Manager</th><th>Status</th><th>Submitted at</th><th></th></tr></thead>'
       +'<tbody>'+tRows+'</tbody></table></div>'
-      +'<div class="charts-col">'+ovCharts+'</div>';
+      +'<div class="charts-grid" style="margin-top:16px">'+ovCharts+'</div>';
     DEPTS.forEach(function(d,i){
       var range=buildRange(d.id);
       var vals=range.dkeys.map(function(dk){return getGSVal(d.id,dk.y,dk.m,d.kpis[0].k);});
@@ -1211,10 +1282,10 @@ function renderbodRight(id){
   var mw2=el('rp-msg-btn-wrap');
   if(mw2){mw2.innerHTML='<button class="msg-action-btn" id="rp-open-msg" data-dept="'+id+'">&#x1F4AC; Message</button>';}
   var dept=DEPTS.find(function(d){return d.id===id;});
-  el('rp-title').textContent=dept.name;
-  el('rp-sub').textContent=dept.purpose;
+  el('rp-title').innerHTML=dept.name+' <span class="dept-abbr-badge">'+dept.abbr+'</span>';
+  el('rp-sub').textContent=dept.mgr+' · '+dept.purpose;
   var range=buildRange(id);
-  body.innerHTML='<div class="charts-col" id="b-col"></div>';
+  body.innerHTML='<div class="charts-grid" id="b-col"></div>';
   var col=el('b-col');
   if(dept.overlayCharts){
     dept.overlayCharts.forEach(function(oc,i){
@@ -1225,7 +1296,9 @@ function renderbodRight(id){
       var vals=range.dkeys.map(function(dk){return getGSVal(id,dk.y,dk.m,kpi.k);});
       var cid='b_'+i;
       var div=document.createElement('div');div.className='cc';
-      div.innerHTML='<div class="cc-t">'+kpi.l+'</div>'
+      try{div.dataset.oc=JSON.stringify({title:kpi.l,unit:kpi.u,datasets:[{key:kpi.k,label:kpi.l,color:dept.color,type:'line'}]});}catch(e){}
+      div.dataset.did=deptId||id;
+      div.innerHTML='<div class="cc-hint">🔍 Drill down</div><div class="cc-t">'+kpi.l+'</div>'
         +'<div class="cc-s">'+kpi.u+' · '+rangeLabel(range)+'</div>'
         +'<div class="cc-w"><canvas id="'+cid+'"></canvas></div>';
       col.appendChild(div);
@@ -1317,11 +1390,58 @@ function mkLine(id,labels,label,data,color,unit){
 
 
 // ═══════════════════════════════════════════════
-// MESSAGING — BOD <-> Dept 2-way communication
+// MESSAGING — BOD <-> Dept 2-way
+// Storage: localStorage (instant) + Google Sheet (cross-device)
+// GAS saves rows to "Messages" sheet: id,from,fromRole,dept,text,ts
+// To enable cross-device: fill MSG_GID after creating Messages tab
 // ═══════════════════════════════════════════════
 var msgDeptTarget=null;
-function getMsgs(){try{var r=localStorage.getItem('cmi_msgs');return r?JSON.parse(r):[];}catch(e){return[];}}
-function saveMsgsLocal(m){try{localStorage.setItem('cmi_msgs',JSON.stringify(m));}catch(e){}}
+var MSG_LOADED_FROM_SHEET=false; // loaded once per session
+
+function getMsgs(){
+  try{var r=localStorage.getItem('cmi_msgs');return r?JSON.parse(r):[];}
+  catch(e){return[];}
+}
+function saveMsgsLocal(m){
+  try{localStorage.setItem('cmi_msgs',JSON.stringify(m));}catch(e){}
+}
+
+// Fetch messages CSV from Google Sheet tab → merge into localStorage
+function syncMsgsFromSheet(cb){
+  if(!MSG_GID||MSG_LOADED_FROM_SHEET){if(cb)cb();return;}
+  var url='https://docs.google.com/spreadsheets/d/'+SHEET_ID
+    +'/export?format=csv&gid='+MSG_GID+'&t='+Date.now();
+  fetch(url)
+    .then(function(r){return r.text();})
+    .then(function(csv){
+      var rows=parseCSV(csv);
+      // Header: id,from,fromRole,dept,text,ts
+      var sheetMsgs=[];
+      for(var i=1;i<rows.length;i++){
+        var r=rows[i];
+        if(r[0]&&r[4]){ // id + text must exist
+          sheetMsgs.push({
+            id:parseInt(r[0])||Date.now()+i,
+            from:r[1]||'',fromRole:r[2]||'',dept:r[3]||'',
+            text:r[4]||'',ts:r[5]||'',read:[]
+          });
+        }
+      }
+      // Merge: use sheet as source of truth, keep local msgs not yet on sheet
+      var local=getMsgs();
+      var sheetIds=sheetMsgs.map(function(m){return m.id;});
+      local.forEach(function(lm){if(sheetIds.indexOf(lm.id)<0)sheetMsgs.push(lm);});
+      // Sort by ts
+      sheetMsgs.sort(function(a,b){return a.ts<b.ts?-1:1;});
+      saveMsgsLocal(sheetMsgs);
+      MSG_LOADED_FROM_SHEET=true;
+      if(cb)cb();
+    })
+    .catch(function(){
+      MSG_LOADED_FROM_SHEET=true; // don't retry on fail
+      if(cb)cb();
+    });
+}
 function getUnreadCount(deptId){
   var msgs=getMsgs();var me=U?U.username:'';
   return msgs.filter(function(m){
@@ -1339,7 +1459,8 @@ function openMsgPanel(deptId){
   msgDeptTarget=deptId;
   el('msg-panel-title').textContent='\u{1F4AC} '+(dept?dept.name:deptId);
   el('msg-panel').classList.add('open');
-  refreshMsgThread();
+  // Sync from sheet then refresh
+  syncMsgsFromSheet(function(){refreshMsgThread();});
   var msgs=getMsgs();var me=U?U.username:'';
   msgs.forEach(function(m){if(m.dept===deptId){if(!m.read)m.read=[];if(m.read.indexOf(me)<0)m.read.push(me);}});
   saveMsgsLocal(msgs);
@@ -1367,23 +1488,158 @@ function sendMsg(){
     text:text,ts:new Date().toISOString(),read:[U.username]};
   var msgs=getMsgs();msgs.push(msg);saveMsgsLocal(msgs);
   inp.value='';refreshMsgThread();
-  if(typeof GAS_MSG_URL!=='undefined'&&GAS_MSG_URL){
-    fetch(GAS_MSG_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'sendMsg',msg:msg})}).catch(function(){});
+  // Send to GAS via image beacon (CORS-free, fire-and-forget)
+  if(typeof SCRIPT_URL!=='undefined'&&SCRIPT_URL){
+    var p=encodeURIComponent;
+    var params='action=saveMsg&id='+p(msg.id)+'&from='+p(msg.from)
+      +'&fromRole='+p(msg.fromRole)+'&dept='+p(msg.dept)
+      +'&text='+p(msg.text)+'&ts='+p(msg.ts);
+    var beacon=new Image();
+    beacon.src=SCRIPT_URL+'?'+params+'&cb='+Date.now();
+  }
+  // Also show a note if MSG_GID not set
+  if(!MSG_GID){
+    var info=el('msg-sync-note');
+    if(info){info.textContent='⚠ Set MSG_GID to sync across devices.';info.style.display='block';}
   }
 }
 function showMsgHistory(){
-  var msgs=getMsgs().slice().reverse();
-  el('modal-title').textContent='Message History';
+  el('modal-title').textContent='Message History (loading…)';
+  el('modal-overlay').style.display='flex';
+  el('modal-body').innerHTML='<div style="text-align:center;padding:20px;color:var(--hi)">Loading…</div>';
+  syncMsgsFromSheet(function(){
+    var msgs=getMsgs().slice().reverse();
+    el('modal-title').textContent='Message History'+(MSG_GID?' (synced)':'');
   el('modal-body').innerHTML=!msgs.length
     ?'<div style="color:var(--hi);font-size:12px;text-align:center;padding:20px">No messages yet.</div>'
     :msgs.map(function(m){
       var dept=DEPTS.find(function(d){return d.id===m.dept;});
       return '<div class="hist-item"><div class="hist-meta">'+m.fromRole.toUpperCase()+' \u00b7 '+m.from+' \u2192 '+(dept?dept.name:m.dept)+' \u00b7 '+new Date(m.ts).toLocaleString()+'</div><div class="hist-text">'+esc(m.text)+'</div></div>';
     }).join('');
-  el('modal-overlay').style.display='flex';
+  });
 }
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
+
+// ═══════════════════════════════════════════════
+// DRILL-DOWN MODAL — click any chart card to enlarge
+// ═══════════════════════════════════════════════
+function openDrillDown(oc, did){
+  var range = buildRange(did);
+  var isTwoBar = oc.datasets.length===2
+    && oc.datasets[0].type==='bar' && oc.datasets[1].type==='bar';
+  var isMulti = oc.datasets.length > 1;
+
+  // Header
+  el('drill-title').textContent = oc.title;
+  el('drill-sub').textContent   = rangeLabel(range);
+
+  // Legend
+  var legendHtml='<div class="drill-legend">'
+    +oc.datasets.map(function(ds){
+      return '<div class="dl-item"><span class="dl-dot" style="background:'+ds.color+'"></span>'+ds.label+'</div>';
+    }).join('');
+  if(isTwoBar) legendHtml+='<div class="dl-item"><span class="dl-dot" style="background:#6366F1;border-radius:50%"></span>Ratio %</div>';
+  legendHtml+='</div>';
+
+  // Body HTML
+  var bodyHtml = legendHtml;
+  if(isTwoBar){
+    bodyHtml += '<div class="drill-split">'
+      +'<div><div class="drill-cw"><canvas id="drill-canvas"></canvas></div></div>'
+      +'<div class="drill-total-card">'
+      +'<div class="dt-title">Total</div>'
+      +'<div class="dt-sub">'+rangeLabel(range)+'</div>'
+      +'<div class="dt-cw"><canvas id="drill-tot-canvas"></canvas></div>'
+      +'<div class="dt-ratio" id="drill-ratio"></div>'
+      +'</div></div>';
+  } else {
+    bodyHtml += '<div class="drill-cw"><canvas id="drill-canvas"></canvas></div>';
+  }
+  el('drill-body').innerHTML = bodyHtml;
+  el('drill-overlay').style.display = 'flex';
+
+  // Destroy previous drill charts
+  if(CH['drill-c']){try{CH['drill-c'].destroy();}catch(e){}delete CH['drill-c'];}
+  if(CH['drill-t']){try{CH['drill-t'].destroy();}catch(e){}delete CH['drill-t'];}
+
+  var many = range.labels.length > 24;
+  var datasets = oc.datasets.map(function(ds){
+    var vals = range.dkeys.map(function(dk){return getGSVal(did,dk.y,dk.m,ds.key);});
+    var base = {label:ds.label,data:vals,borderColor:ds.color,
+      backgroundColor:ds.color+(ds.type==='bar'?'dd':'40'),
+      tension:.3,fill:ds.type!=='bar',
+      pointRadius:many?2:4,borderWidth:ds.type==='bar'?1:2,
+      pointBackgroundColor:ds.color,spanGaps:true,yAxisID:'y'};
+    if(ds.type==='bar'){base.type='bar';base.borderRadius=3;}
+    return base;
+  });
+
+  var va=[], vb=[];
+  if(isTwoBar){
+    va = range.dkeys.map(function(dk){return getGSVal(did,dk.y,dk.m,oc.datasets[0].key);});
+    vb = range.dkeys.map(function(dk){return getGSVal(did,dk.y,dk.m,oc.datasets[1].key);});
+    var rv = va.map(function(a,i){return a&&vb[i]?Math.round(vb[i]/a*1000)/10:null;});
+    datasets.push({type:'line',label:'Ratio %',data:rv,
+      borderColor:'#6366F1',backgroundColor:'transparent',
+      tension:.3,fill:false,pointRadius:many?2:3,
+      pointBackgroundColor:'#6366F1',spanGaps:true,yAxisID:'y2',borderDash:[4,3]});
+  }
+
+  var opts = chartOpts(oc.unit||'');
+  if(isTwoBar){
+    opts.scales.y2={type:'linear',position:'right',grid:{drawOnChartArea:false},
+      ticks:{font:{size:11},callback:function(v){return v+'%';}}};
+  }
+  opts.plugins.datalabels = {
+    display:function(ctx){return ctx.dataset.type==='bar'&&!many;},
+    color:'#333',anchor:'end',align:'top',font:{size:10,weight:'600'},
+    formatter:function(v){
+      if(v==null)return null;
+      if(oc.unit==='USD')return v>=1e6?(Math.round(v/1e5)/10)+'M':v>=1000?Math.round(v/1000)+'k':'';
+      return Math.round(v);
+    }
+  };
+
+  CH['drill-c'] = new Chart(document.getElementById('drill-canvas'),{
+    type: isTwoBar||oc.datasets[0].type==='bar' ? 'bar' : 'line',
+    data:{labels:range.labels,datasets:datasets},
+    options:opts,plugins:[ChartDataLabels]
+  });
+
+  // Total chart for twoBar
+  if(isTwoBar){
+    var totA=va.reduce(function(s,v){return s+(v||0);},0);
+    var totB=vb.reduce(function(s,v){return s+(v||0);},0);
+    var totRatio=totA?Math.round(totB/totA*1000)/10:null;
+    if(el('drill-ratio')&&totRatio!==null)
+      el('drill-ratio').textContent='Ratio: '+totRatio+'%';
+    CH['drill-t'] = new Chart(document.getElementById('drill-tot-canvas'),{
+      type:'bar',
+      data:{labels:[oc.datasets[0].label,oc.datasets[1].label],
+        datasets:[{data:[totA,totB],
+          backgroundColor:[oc.datasets[0].color+'bb',oc.datasets[1].color+'bb'],
+          borderColor:[oc.datasets[0].color,oc.datasets[1].color],
+          borderWidth:1,borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:20}},
+        plugins:{legend:{display:false},datalabels:{display:true,color:'#333',
+          anchor:'end',align:'top',font:{size:10,weight:'700'},
+          formatter:function(v){
+            if(v==null)return null;
+            if(oc.unit==='USD')return v>=1e6?(Math.round(v/1e5)/10)+'M':v>=1000?Math.round(v/1000)+'k':'';
+            return Math.round(v);
+          }}},
+        scales:{y:{display:false,beginAtZero:true},x:{grid:{display:false},ticks:{font:{size:11}}}}},
+      plugins:[ChartDataLabels]
+    });
+  }
+}
+
+function closeDrillDown(){
+  el('drill-overlay').style.display='none';
+  if(CH['drill-c']){try{CH['drill-c'].destroy();}catch(e){}delete CH['drill-c'];}
+  if(CH['drill-t']){try{CH['drill-t'].destroy();}catch(e){}delete CH['drill-t'];}
+}
 // ═══════════════════════════════════════════════
 // CHANGE PASSWORD
 // Passwords are stored in localStorage so they
@@ -1407,6 +1663,9 @@ function getPass(username){
 // Sheet GID for "Passwords" tab — update this after first deploy
 // To find: open Google Sheet → click Passwords tab → look at URL: ...#gid=XXXXXX
 var PW_SHEET_GID = '41732400';
+// MSG_GID: After creating 'Messages' tab in Google Sheet, fill in its GID here.
+// Find it: open Sheet → click Messages tab → look at URL: ...#gid=XXXXXX
+var MSG_GID = ''; // ← fill in after creating Messages tab
 
 function getPwSheetUrl(){
   return 'https://docs.google.com/spreadsheets/d/'+SHEET_ID
@@ -1471,7 +1730,8 @@ function doLogin(){
   var av=el('t-av');
   av.textContent=U.ini?U.ini:U.name.trim().charAt(0).toUpperCase();
   av.style.background=U.color+'25'; av.style.color=U.color;
-  el('t-badge').textContent=(U.role==='bod')?'BOD':(U.role==='admin'?'ADMIN':U.dept);
+  var _deptObj=DEPTS.find(function(d){return d.id===U.dept;});
+  el('t-badge').textContent=(U.role==='bod')?'BOD':(U.role==='admin'?'ADMIN':(_deptObj?_deptObj.abbr:U.dept));
   el('t-badge').className='tbadge '+(U.role==='dept'?'tba':'tbm');
   el('t-name').textContent=U.name;
   setSyncBadge('loading');
@@ -1584,6 +1844,15 @@ document.addEventListener('DOMContentLoaded',function(){
   el('l-u').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
 
   // FIX #6: back button wired here
+  // Drill-down modal
+  el('drill-close').addEventListener('click',closeDrillDown);
+  el('drill-overlay').addEventListener('click',function(e){
+    if(e.target===el('drill-overlay'))closeDrillDown();
+  });
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape')closeDrillDown();
+  });
+
   el('btn-bod-back').addEventListener('click',function(){
     accOpen=null; buildbodLeft(); renderbodRight(null);
   });
@@ -1617,7 +1886,20 @@ document.addEventListener('DOMContentLoaded',function(){
     var t=e.target;
     var btn=t.closest('[data-dept]');
     if(btn&&btn.classList.contains('vc-btn')){bodViewDept(btn.dataset.dept);return;}
-    if(t.classList.contains('vc-btn')&&t.dataset.dept){bodViewDept(t.dataset.dept);}
+    if(t.classList.contains('vc-btn')&&t.dataset.dept){bodViewDept(t.dataset.dept);return;}
+    // Overview card: click to bodViewDept
+    var ovCard=t.closest('[data-dept-ov]');
+    if(ovCard){bodViewDept(ovCard.dataset.deptOv);return;}
+    // Drill-down: click any .cc card that has data-oc
+    var ccCard=t.closest('.cc');
+    if(ccCard&&ccCard.dataset.oc){
+      try{
+        var oc=JSON.parse(ccCard.dataset.oc);
+        var did=ccCard.dataset.did||deptId;
+        openDrillDown(oc,did);
+      }catch(ex){}
+      return;
+    }
   });
   document.body.addEventListener('click',function(e){
     var t=e.target;
