@@ -284,6 +284,25 @@ tbody tr:hover td{background:var(--sf2)}
 .dept-purpose{font-size:10px;color:var(--hi);margin-bottom:10px;
   font-style:italic;line-height:1.4;padding:5px 8px;background:var(--sf2);
   border-radius:var(--r);border-left:3px solid var(--bd2)}
+
+/* ── Message button unread badge ── */
+.msg-unread-badge{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:16px;height:16px;padding:0 4px;
+  background:var(--rd);color:#fff;border-radius:8px;
+  font-size:10px;font-weight:700;margin-left:5px;
+  animation:pulse-red 2s ease-in-out infinite;
+}
+@keyframes pulse-red{
+  0%,100%{transform:scale(1);opacity:1;}
+  50%{transform:scale(1.15);opacity:.85;}
+}
+/* topbar msg indicator */
+#topbar-msg-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--rd);
+  display:none;margin-right:2px;
+  animation:pulse-red 2s ease-in-out infinite;
+}
 </style>
 </head>
 <body>
@@ -312,12 +331,9 @@ tbody tr:hover td{background:var(--sf2)}
     <div class="tlogo">CMI <span>· KPI Dashboard</span></div>
     <div class="tright">
       <!-- FIX #2: sync badge is muted, no background colour -->
-      <button id="sync-badge">● Loading…</button>
-      <!-- FIX #3a: dept badge — to hide, comment:  el('t-badge').textContent = U.dept  -->
-      <span id="t-badge" class="tbadge"></span>
-      <!-- FIX #3b: name text — to hide, comment:  el('t-name').textContent = U.name  -->
-      <span id="t-name" style="font-size:12px;color:var(--mu)"></span>
-      <div id="t-av" class="tav"></div>
+      <span id="topbar-msg-dot" title="You have unread messages"></span><button id="sync-badge">● Loading…</button>
+      <!-- t-badge and t-name removed in V14 -->
+      <!-- avatar circle removed per V14 -->
       <button id="btn-logout">Sign out</button>
     </div>
   </div>
@@ -928,7 +944,7 @@ function saveDept(){
 function renderDeptRight(){
   var dept=DEPTS.find(function(d){return d.id===deptId;});
   el('rp-title').textContent=dept.name+' ('+dept.abbr+')';
-  el('rp-sub').textContent=dept.purpose+' · Manager: '+dept.mgr;
+  el('rp-sub').textContent=''; // purpose and manager removed from chart header (V14)
   el('btn-bod-back').classList.add('hidden');
   var mw=el('rp-msg-btn-wrap');
   if(mw){var ud=getDeptUnreadBadge(deptId);mw.innerHTML='<button class="msg-action-btn" id="rp-open-msg" data-dept="'+deptId+'">&#x1F4AC; Messages'+ud+'</button>';}
@@ -1280,7 +1296,7 @@ function renderbodRight(id){
   if(mw2){mw2.innerHTML='<button class="msg-action-btn" id="rp-open-msg" data-dept="'+id+'">&#x1F4AC; Message</button>';}
   var dept=DEPTS.find(function(d){return d.id===id;});
   el('rp-title').textContent=dept.name;
-  el('rp-sub').textContent=dept.purpose;
+  el('rp-sub').textContent=''; // purpose removed (V14)
   var range=buildRange(id);
   body.innerHTML='<div class="charts-grid" id="b-col"></div>';
   var col=el('b-col');
@@ -1344,9 +1360,19 @@ function chartOpts(unit){
       return(Math.round(v*100)/100).toString();
     }}}},
     scales:{
-      y:{beginAtZero:unit!=='%',grid:{color:'rgba(0,0,0,.05)'},
+      y:{beginAtZero:false,grid:{color:'rgba(0,0,0,.05)'},
+         // V14: min = dataMin × 0.90 so lowest point is clearly visible
+         afterDataLimits:function(axis){
+           var range=axis.max-axis.min;
+           // For zero-based units (counts, integers) keep 0 as min
+           if(unit==='count'||unit==='cnt'||unit==='ppl'||unit==='No.'||unit==='Rate'){
+             axis.min=0;return;
+           }
+           // Pad bottom by 10% of visible range
+           if(axis.min>0)axis.min=Math.max(0,axis.min-range*0.10);
+           else axis.min=axis.min-Math.abs(axis.min)*0.10;
+         },
          ticks:{font:{size:10},callback:function(v){
-           // FIX #1: round Y-axis tick labels — eliminates 6.800000001% problem
            if(unit==='%')return(Math.round(v*10)/10)+'%';
            if(unit==='USD')return v>=1e6?(Math.round(v/1e5)/10)+'M':v>=1000?Math.round(v/1000)+'k':'$'+Math.round(v);
            if(unit==='hrs'||unit==='count'||unit==='cnt'||unit==='ppl')return Math.round(v).toLocaleString();
@@ -1402,20 +1428,102 @@ function getDeptUnreadBadge(deptId){
   var n=getUnreadCount(deptId);
   return n>0?'<span class="unread-dot" title="'+n+' unread"></span>':'';
 }
+var MSG_POLL_TIMER = null;   // active when panel is open
+var MSG_BG_TIMER   = null;   // background unread-dot refresh (60s)
+
+// ── Background poll: refresh unread counts silently ──
+function startMsgBackgroundPoll(){
+  if(MSG_BG_TIMER) clearInterval(MSG_BG_TIMER);
+  MSG_BG_TIMER = setInterval(function(){
+    if(!U) return;
+    loadMsgsFromGAS('', function(){
+      updateUnreadUI();
+    });
+  }, 60000); // every 60 seconds
+}
+
+function stopMsgBackgroundPoll(){
+  if(MSG_BG_TIMER){clearInterval(MSG_BG_TIMER);MSG_BG_TIMER=null;}
+}
+
+// ── Update all unread indicators in the UI ──
+function updateUnreadUI(){
+  var totalUnread = 0;
+  DEPTS.forEach(function(d){
+    var n = getUnreadCount(d.id);
+    totalUnread += n;
+    // Update accordion badge (if visible)
+    var nameEl = document.querySelector('#acc-'+d.id+' .ah-name');
+    if(nameEl){
+      // Remove old unread dot, re-add if needed
+      var oldDot = nameEl.querySelector('.unread-dot');
+      if(oldDot) oldDot.remove();
+      if(n > 0){
+        var dot = document.createElement('span');
+        dot.className = 'unread-dot';
+        dot.title = n+' unread';
+        nameEl.appendChild(dot);
+      }
+    }
+    // Update open msg button in rp-msg-btn-wrap if showing this dept
+    if(msgDeptTarget === d.id){
+      // panel is open for this dept — no need to show badge
+    }
+  });
+  // Topbar red dot
+  var topDot = el('topbar-msg-dot');
+  if(topDot) topDot.style.display = totalUnread > 0 ? 'inline-block' : 'none';
+  // Update Messages button badge in rp-msg-btn-wrap
+  var openMsgBtn = document.querySelector('#rp-open-msg');
+  if(openMsgBtn && openMsgBtn.dataset.dept){
+    var deptUnread = getUnreadCount(openMsgBtn.dataset.dept);
+    var existing = openMsgBtn.querySelector('.msg-unread-badge');
+    if(deptUnread > 0){
+      if(!existing){
+        var badge = document.createElement('span');
+        badge.className = 'msg-unread-badge';
+        openMsgBtn.appendChild(badge);
+      } else {
+        existing.textContent = deptUnread > 1 ? deptUnread : '';
+      }
+    } else {
+      if(existing) existing.remove();
+    }
+  }
+}
+
 function openMsgPanel(deptId){
   var dept=DEPTS.find(function(d){return d.id===deptId;});
   msgDeptTarget=deptId;
   el('msg-panel-title').textContent='\u{1F4AC} '+(dept?dept.name:deptId);
   el('msg-panel').classList.add('open');
-  // Sync from sheet first, then render
-  syncMsgsFromSheet(function(){
+  // Load from GAS first, render, mark read
+  loadMsgsFromGAS(deptId, function(msgs){
     refreshMsgThread();
-    var msgs=getMsgs();var me=U?U.username:'';
-    msgs.forEach(function(m){if(m.dept===deptId){if(!m.read)m.read=[];if(m.read.indexOf(me)<0)m.read.push(me);}});
-    saveMsgsLocal(msgs);
+    markDeptRead(deptId);
   });
+  // Poll every 15s while panel is open
+  if(MSG_POLL_TIMER) clearInterval(MSG_POLL_TIMER);
+  MSG_POLL_TIMER = setInterval(function(){
+    if(!msgDeptTarget) return;
+    loadMsgsFromGAS(msgDeptTarget, function(){
+      refreshMsgThread();
+    });
+  }, 15000);
 }
-function closeMsgPanel(){el('msg-panel').classList.remove('open');msgDeptTarget=null;}
+
+function markDeptRead(deptId){
+  var msgs=getMsgs(); var me=U?U.username:'';
+  msgs.forEach(function(m){
+    if(m.dept===deptId){if(!m.read)m.read=[];if(m.read.indexOf(me)<0)m.read.push(me);}
+  });
+  saveMsgsLocal(msgs);
+}
+function closeMsgPanel(){
+  el('msg-panel').classList.remove('open');
+  msgDeptTarget=null;
+  if(MSG_POLL_TIMER){clearInterval(MSG_POLL_TIMER);MSG_POLL_TIMER=null;}
+}
 function refreshMsgThread(){
   if(!msgDeptTarget)return;
   var msgs=getMsgs().filter(function(m){return m.dept===msgDeptTarget;});
@@ -1432,18 +1540,21 @@ function refreshMsgThread(){
       +'</div></div>';
   }).join('');
   thread.scrollTop=thread.scrollHeight;
+  updateUnreadUI();
 }
 function sendMsg(){
   var inp=el('msg-txt-input');var text=(inp.value||'').trim();
   if(!text||!msgDeptTarget||!U)return;
   var msg={id:Date.now(),from:U.username,fromRole:U.role,dept:msgDeptTarget,
     text:text,ts:new Date().toISOString(),read:[U.username]};
+  // Optimistic local update
   var msgs=getMsgs();msgs.push(msg);saveMsgsLocal(msgs);
   inp.value='';refreshMsgThread();
-  // Save to GAS via beacon
-  if(GAS_MSG_URL){
+  // Save to GAS via beacon (CORS-free, fire-and-forget)
+  var gasUrl = GAS_MSG_URL||SCRIPT_URL;
+  if(gasUrl){
     var beacon=new Image();
-    beacon.src=GAS_MSG_URL
+    beacon.src=gasUrl
       +'?action=sendMsg'
       +'&id='+encodeURIComponent(msg.id)
       +'&from='+encodeURIComponent(msg.from)
@@ -1452,18 +1563,26 @@ function sendMsg(){
       +'&text='+encodeURIComponent(msg.text)
       +'&ts='+encodeURIComponent(msg.ts)
       +'&t='+Date.now();
+    // Pull fresh from GAS 3s later to confirm save
+    setTimeout(function(){
+      if(msgDeptTarget) loadMsgsFromGAS(msgDeptTarget, function(){refreshMsgThread();});
+    }, 3000);
   }
 }
 function showMsgHistory(){
-  var msgs=getMsgs().slice().reverse();
   el('modal-title').textContent='Message History';
-  el('modal-body').innerHTML=!msgs.length
-    ?'<div style="color:var(--hi);font-size:12px;text-align:center;padding:20px">No messages yet.</div>'
-    :msgs.map(function(m){
-      var dept=DEPTS.find(function(d){return d.id===m.dept;});
-      return '<div class="hist-item"><div class="hist-meta">'+m.fromRole.toUpperCase()+' \u00b7 '+m.from+' \u2192 '+(dept?dept.name:m.dept)+' \u00b7 '+new Date(m.ts).toLocaleString()+'</div><div class="hist-text">'+esc(m.text)+'</div></div>';
-    }).join('');
+  el('modal-body').innerHTML='<div style="text-align:center;padding:20px;color:var(--hi)">Loading…</div>';
   el('modal-overlay').style.display='flex';
+  loadMsgsFromGAS('', function(allMsgs){
+    var msgs=allMsgs.slice().reverse();
+    el('modal-title').textContent='Message History ('+(msgs.length)+')';
+    el('modal-body').innerHTML=!msgs.length
+      ?'<div style="color:var(--hi);font-size:12px;text-align:center;padding:20px">No messages yet.</div>'
+      :msgs.map(function(m){
+          var dept=DEPTS.find(function(d){return d.id===m.dept;});
+          return '<div class="hist-item"><div class="hist-meta">'+m.fromRole.toUpperCase()+' \u00b7 '+m.from+' \u2192 '+(dept?dept.name:m.dept)+' \u00b7 '+new Date(m.ts).toLocaleString()+'</div><div class="hist-text">'+esc(m.text)+'</div></div>';
+        }).join('');
+  });
 }
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
@@ -1572,31 +1691,45 @@ function getMsgSheetUrl(){
   return 'https://docs.google.com/spreadsheets/d/'+SHEET_ID
     +'/export?format=csv&gid='+MSG_SHEET_GID+'&t='+Date.now();
 }
-function syncMsgsFromSheet(cb){
-  if(!MSG_SHEET_GID){if(cb)cb();return;}
-  fetch(getMsgSheetUrl())
-    .then(function(r){return r.text();})
-    .then(function(csv){
-      var rows=parseCSV(csv);
-      if(rows.length<2){if(cb)cb();return;}
-      // cols: id,from,fromRole,dept,text,ts
-      var msgs=[];
-      for(var i=1;i<rows.length;i++){
-        var r=rows[i];
-        if(!r[0])continue;
-        msgs.push({id:r[0],from:r[1],fromRole:r[2],dept:r[3],text:r[4],ts:r[5],read:[]});
-      }
-      // merge with localStorage (keep read status)
-      var local=getMsgs();
-      var localIds={};
-      local.forEach(function(m){localIds[m.id]=m;});
-      msgs.forEach(function(m){
-        if(localIds[m.id]){m.read=localIds[m.id].read||[];}
+// ── loadMsgsFromGAS: fetch from GAS endpoint (JSON), merge with localStorage ──
+// GAS auto-creates "Messages" tab — no MSG_SHEET_GID needed
+function loadMsgsFromGAS(dept, cb){
+  var url = (GAS_MSG_URL||SCRIPT_URL)
+    +'?action=getMessages'
+    +(dept?'&dept='+encodeURIComponent(dept):'')
+    +'&t='+Date.now();
+  fetch(url)
+    .then(function(r){return r.json();})
+    .then(function(d){
+      // GAS getMessages returns array directly
+      var sheetMsgs = Array.isArray(d) ? d : [];
+      // Preserve local read-status
+      var local = getMsgs();
+      var localMap = {};
+      local.forEach(function(m){ localMap[String(m.id)] = m; });
+      sheetMsgs.forEach(function(m){
+        var lm = localMap[String(m.id)];
+        if(lm) m.read = lm.read || [];
+        else    m.read = [];
       });
-      saveMsgsLocal(msgs);
-      if(cb)cb();
+      // Keep locally-created msgs not yet on sheet (optimistic UI)
+      var sheetIds = sheetMsgs.map(function(m){return String(m.id);});
+      local.forEach(function(lm){
+        if(sheetIds.indexOf(String(lm.id)) < 0) sheetMsgs.push(lm);
+      });
+      sheetMsgs.sort(function(a,b){return String(a.ts)<String(b.ts)?-1:1;});
+      saveMsgsLocal(sheetMsgs);
+      if(cb) cb(sheetMsgs);
     })
-    .catch(function(){if(cb)cb();});
+    .catch(function(){
+      // GAS unavailable → use local cache
+      if(cb) cb(getMsgs());
+    });
+}
+
+// Legacy alias for backward-compat
+function syncMsgsFromSheet(cb){
+  loadMsgsFromGAS('', function(){if(cb)cb();});
 }
 
 function doLogin(){
@@ -1619,13 +1752,10 @@ function doLogin(){
   U=Object.assign({},acc,{username:u});
   el('pg-login').style.display='none';
   el('pg-app').style.display='flex';
-  var av=el('t-av');
-  av.textContent=U.ini?U.ini:U.name.trim().charAt(0).toUpperCase();
-  av.style.background=U.color+'25'; av.style.color=U.color;
-  el('t-badge').textContent=(U.role==='bod')?'BOD':(U.role==='admin'?'ADMIN':U.dept);
-  el('t-badge').className='tbadge '+(U.role==='dept'?'tba':'tbm');
-  el('t-name').textContent=U.name;
+  // t-av avatar circle removed in V14
+  // t-badge and t-name removed in V14 (topbar cleaner)
   setSyncBadge('loading');
+  startMsgBackgroundPoll(); // start 60s background msg poll
   fetchSheetData(function(){
     if(U.role==='bod'||U.role==='admin'){
       buildbodLeft(); renderbodRight(null);
