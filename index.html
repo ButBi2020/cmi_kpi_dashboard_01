@@ -303,6 +303,21 @@ tbody tr:hover td{background:var(--sf2)}
   display:none;margin-right:2px;
   animation:pulse-red 2s ease-in-out infinite;
 }
+
+/* ── Sticky period/chart-range sections ── */
+.lp-sticky{position:sticky;top:0;z-index:10;background:var(--sf);
+  padding:12px 13px 8px;margin:-14px -13px 0;border-bottom:1px solid var(--bd)}
+/* BOD period selector */
+.bod-period-box{background:var(--sf2);border:1px solid var(--bd);border-radius:var(--r);
+  padding:9px 11px;margin-bottom:8px}
+.bod-period-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.bod-period-label{font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.7px;color:var(--hi);margin-bottom:4px}
+/* Drill modal legend */
+.drill-legend-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.drill-leg-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--mu)}
+.drill-leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.drill-leg-line{width:14px;height:3px;border-radius:2px;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -373,7 +388,7 @@ tbody tr:hover td{background:var(--sf2)}
         </div>
       </div>
       <div class="drill-bd">
-        <div class="drill-cw"><canvas id="drill-canvas"></canvas></div>
+        <div id="drill-body"><!-- set dynamically --></div>
       </div>
     </div>
   </div>
@@ -650,6 +665,9 @@ var drF = {y:NY-1, m:0}, drT = {y:NY, m:NM};
 var accOpen = null;
 var CH = {};
 var UNLOCKED = {};
+// BOD selected period (for snapshot delta view)
+var selBodY = NY;
+var selBodM = NM; // 0-indexed
 
 Chart.register(ChartDataLabels);
 function el(id){ return document.getElementById(id); }
@@ -816,13 +834,14 @@ function buildDeptLeft(){
   var drYO=function(sel){return YRS.map(function(y){return '<option value="'+y+'"'+(y===sel?' selected':'')+'>'+y+'</option>';}).join('');};
 
   el('lp-body').innerHTML=
-    '<div class="lsec">Period</div>'
+    '<div class="lp-sticky"><div class="lsec">Period</div>'
     +'<div class="my-row">'
     +'<select class="mysel" id="s-m">'+mO+'</select>'
     +'<select class="mysel" id="s-y">'+yO+'</select></div>'
     +'<div class="inp-st">'
     +'<span style="font-size:11px;color:var(--mu);font-weight:500">Status</span>'
     +'<span class="badge '+(saved?'bg':'ba')+'" id="st-badge">'+(saved?'Submitted':'Pending')+'</span></div>'
+    +'</div>' // close lp-sticky
     +'<div class="lsec">'+dept.name+' ('+dept.abbr+') — '+MN[selM]+' '+selY+'</div>'
     +'<div class="dept-purpose">'+dept.purpose+'</div>'
     +'<div class="ki-list">'+inputs+'</div>'
@@ -1103,9 +1122,16 @@ function renderOverlayChart(col, cid, oc, range, did, gridMode){
 // bod VIEW — LEFT PANEL
 // ═══════════════════════════════════════════════
 function buildbodLeft(){
+  var mO=MN.map(function(m,i){return '<option value="'+i+'"'+(i===selBodM?' selected':'')+'>'+m+'</option>';}).join('');
+  var yO=YRS.map(function(y){return '<option value="'+y+'"'+(y===selBodY?' selected':'')+'>'+y+'</option>';}).join('');
   var drMO=function(sel){return MN.map(function(m,i){return '<option value="'+i+'"'+(i===sel?' selected':'')+'>'+m+'</option>';}).join('');};
   var drYO=function(sel){return YRS.map(function(y){return '<option value="'+y+'"'+(y===sel?' selected':'')+'>'+y+'</option>';}).join('');};
-  var html='<div class="lsec">Chart range</div>'
+  var html='<div class="lp-sticky">'
+    +'<div class="bod-period-label">Period</div>'
+    +'<div class="bod-period-box">'
+    +'<div class="bod-period-row"><select class="mysel" id="bod-s-m">'+mO+'</select><select class="mysel" id="bod-s-y">'+yO+'</select></div>'
+    +'</div>'
+    +'<div class="lsec" style="margin-top:6px">Chart range</div>'
     +'<div class="dr-box"><div class="dr-quick">'
     +'<button class="drq" data-quick="ytd">YTD</button>'
     +'<button class="drq" data-quick="12m">Last 12M</button>'
@@ -1117,9 +1143,12 @@ function buildbodLeft(){
     +'<select class="drsel" id="bdt-m">'+drMO(drT.m)+'</select>'
     +'<select class="drsel" id="bdt-y">'+drYO(drT.y)+'</select></div>'
     +'<button class="dr-apply" id="dr-apply-b">Apply</button></div>'
-    +'<div class="lsec">Departments</div>';
+    +'</div>' // close lp-sticky
+    +'<div class="lsec" style="margin-top:10px">Departments</div>';
 
-  DEPTS.forEach(function(d){
+  // Sort alphabetically by name
+  var sortedDepts=DEPTS.slice().sort(function(a,b){return a.name.localeCompare(b.name);});
+  sortedDepts.forEach(function(d){
     var hasRow=!!getGSRow(d.id,NY,NM);
     var open=accOpen===d.id;
     // FIX #5: last data month per dept
@@ -1160,18 +1189,25 @@ function buildbodLeft(){
 }
 
 function buildAccBody(dept){
-  // Use latest available data month, not current calendar month
-  var lastDM=getLastDataMonth(dept.id);
-  if(!lastDM){
-    return '<div style="font-size:12px;color:var(--hi);padding:4px 0">No data available yet.</div>'
-      +'<button class="vc-btn" data-dept="'+dept.id+'">View all charts →</button>';
-  }
-  var curM0=lastDM.m-1; // convert to 0-indexed
-  var curY=lastDM.y;
+  // Use BOD selected period
+  var curM0=selBodM; var curY=selBodY;
   var prevM0=curM0===0?11:curM0-1;
   var prevY=curM0===0?curY-1:curY;
   var row=getGSRow(dept.id,curY,curM0);
+  if(!row){
+    // Fall back to latest available
+    var lastDM=getLastDataMonth(dept.id);
+    if(!lastDM){
+      return '<div style="font-size:12px;color:var(--hi);padding:4px 0">No data for '+MN[curM0]+' '+curY+'.</div>'
+        +'<button class="vc-btn" data-dept="'+dept.id+'">View all charts →</button>';
+    }
+    curM0=lastDM.m-1; curY=lastDM.y;
+    prevM0=curM0===0?11:curM0-1; prevY=curM0===0?curY-1:curY;
+    row=getGSRow(dept.id,curY,curM0);
+  }
   var prevRow=getGSRow(dept.id,prevY,prevM0);
+  var revCount=getRevisionCount(dept.id,curY,curM0);
+  var revBadge=revCount>1?'<span style="font-size:10px;font-weight:600;padding:1px 5px;background:var(--bl-bg);color:var(--bl);border-radius:5px;margin-left:5px">'+ordinal(revCount)+'</span>':'';
   var rows=dept.kpis.map(function(k){
     var v=getGSVal(dept.id,curY,curM0,k.k);
     var pv=prevRow?getGSVal(dept.id,prevY,prevM0,k.k):null;
@@ -1188,7 +1224,7 @@ function buildAccBody(dept){
       +'</div>';
   }).join('');
   var cmt=row?getGSVal(dept.id,curY,curM0,'comment')||'':'';
-  return '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--hi);margin-bottom:6px">Snapshot — '+MN[curM0]+' '+curY+'</div>'
+  return '<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--hi);margin-bottom:6px">Snapshot — '+MN[curM0]+' '+curY+revBadge+'</div>'
     +'<div>'+rows+'</div>'
     +(cmt?'<div class="ks-cmt">'+cmt+'</div>':'')
     +'<button class="vc-btn" data-dept="'+dept.id+'">View all charts →</button>';
@@ -1196,7 +1232,9 @@ function buildAccBody(dept){
 
 function toggleAcc(id){
   accOpen=accOpen===id?null:id;
-  DEPTS.forEach(function(d){
+  // Sort alphabetically by name
+  var sortedDepts=DEPTS.slice().sort(function(a,b){return a.name.localeCompare(b.name);});
+  sortedDepts.forEach(function(d){
     var h=document.querySelector('#acc-'+d.id+' .acc-h');
     var b=el('ab-'+d.id);
     var c=document.querySelector('#acc-'+d.id+' .ah-ch');
@@ -1262,7 +1300,7 @@ function renderbodRight(id){
         +'<td><span style="display:inline-flex;align-items:center;gap:6px">'
         +'<span style="width:7px;height:7px;border-radius:50%;background:'+d.color+';display:inline-block"></span>'
         +d.name+'</span></td>'
-        +'<td style="color:var(--mu)">'+d.mgr+'</td>'
+        +'<td style="color:var(--mu)"><span style="font-size:10px;font-weight:600;padding:0 5px;background:var(--bl-bg);color:var(--bl);border-radius:4px;margin-right:4px">'+d.abbr+'</span>'+d.mgr+'</td>'
         +'<td><span class="badge '+badgeCls+'" style="'+badgeStyle+'">'+badgeTxt+'</span></td>'
         +'<td style="color:var(--mu);font-size:11px">'+ts+'</td>'
         +'<td><button class="vc-btn" style="width:auto;padding:4px 10px;margin:0" data-dept="'+d.id+'">Charts →</button></td>'
@@ -1449,7 +1487,9 @@ function stopMsgBackgroundPoll(){
 // ── Update all unread indicators in the UI ──
 function updateUnreadUI(){
   var totalUnread = 0;
-  DEPTS.forEach(function(d){
+  // Sort alphabetically by name
+  var sortedDepts=DEPTS.slice().sort(function(a,b){return a.name.localeCompare(b.name);});
+  sortedDepts.forEach(function(d){
     var n = getUnreadCount(d.id);
     totalUnread += n;
     // Update accordion badge (if visible)
@@ -1658,6 +1698,23 @@ function openDrill(title, chartInstance){
   if(!chartInstance) return;
   var ov=el('drill-ov');
   el('drill-title').textContent=title;
+  // Build legend from chart datasets
+  var legHtml='';
+  if(chartInstance&&chartInstance.data&&chartInstance.data.datasets){
+    var dsList=chartInstance.data.datasets.filter(function(ds){return ds.label&&ds.label!=='Ratio %';});
+    if(dsList.length>1||chartInstance.config.type==='bar'){
+      legHtml='<div class="drill-legend-row">'
+        +dsList.map(function(ds){
+          var isBar=ds.type==='bar'||chartInstance.config.type==='bar';
+          var swatch=isBar
+            ?'<span class="drill-leg-dot" style="background:'+(Array.isArray(ds.backgroundColor)?ds.backgroundColor[0]:ds.backgroundColor)+'"></span>'
+            :'<span class="drill-leg-line" style="background:'+ds.borderColor+'"></span>';
+          return '<div class="drill-leg-item">'+swatch+ds.label+'</div>';
+        }).join('')
+        +'</div>';
+    }
+  }
+  el('drill-body').innerHTML=legHtml+'<div class="drill-cw"><canvas id="drill-canvas"></canvas></div>';
   ov.style.display='flex';
   // Clone chart config into drill canvas
   if(drillChart){try{drillChart.destroy();}catch(e){}}
@@ -1912,7 +1969,14 @@ document.addEventListener('DOMContentLoaded',function(){
     if(t.id==='dr-apply-d'||t.id==='dr-apply-b'){applyDR();return;}
   });
   el('lp-body').addEventListener('change',function(e){
-    if(e.target.id==='s-m'||e.target.id==='s-y'){onPC();}
+    if(e.target.id==='s-m'||e.target.id==='s-y'){onPC();return;}
+    if(e.target.id==='bod-s-m'||e.target.id==='bod-s-y'){
+      var bm=el('bod-s-m'),by=el('bod-s-y');
+      if(bm)selBodM=parseInt(bm.value);
+      if(by)selBodY=parseInt(by.value);
+      buildbodLeft();
+      return;
+    }
   });
   el('rp-body').addEventListener('click',function(e){
     var t=e.target;
